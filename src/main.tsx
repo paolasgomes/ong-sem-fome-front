@@ -2,7 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles/global.css";
 import { Layout } from "./components/Layout/Layout";
-import { DonorsPage } from "./pages/donors/page";
+import { DonorsPage } from "./pages/auth/donors/page";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
