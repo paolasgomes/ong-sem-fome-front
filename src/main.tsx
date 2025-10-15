@@ -6,8 +6,8 @@ import "./styles/global.css";
 
 // Componentes e Páginas
 import { Layout } from "./components/Layout/Layout"; 
-import { LoginPage } from "./pages/Loginpage";
-import { DashboardPage } from "./pages/Dashboardpage";
+import { LoginPage } from "./pages/LoginPage";
+import { DashboardPage } from "./pages/DashboardPage";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

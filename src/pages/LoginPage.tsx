@@ -1,63 +1,38 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Heart } from 'lucide-react';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Heart } from "lucide-react";
 
 export function LoginPage() {
-const [email, setEmail] = useState('');
-const [password, setPassword] = useState('');
+const [email, setEmail] = useState("");
+const [password, setPassword] = useState("");
 const navigate = useNavigate();
 
 const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    navigate('/dashboard');
-};
-
-//Logo styles
-const logoContainerStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '48px',
-    height: '48px',
-    backgroundColor: '#f97316',
-    borderRadius: '0.5rem', 
-    margin: '0 auto 1.5rem', 
-};
-
-const logoIconStyle = {
-    width: '24px',
-    height: '24px',
-    color: 'white',
-};
-
-const buttonStyle = {
-    width: '100%',
-    backgroundColor: '#f97316',
-    color: 'white',
-    fontWeight: 'bold',
-    padding: '0.75rem 1rem', 
-    borderRadius: '0.375rem',
-    border: 'none',
-    cursor: 'pointer',
-    fontSize: '1rem',
+    navigate("/dashboard");
 };
 
 return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9fafb' }}>
-    <div style={{ maxWidth: '28rem', width: '100%', backgroundColor: 'white', padding: '2rem', borderRadius: '0.5rem', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}>
-        
-        <div style={logoContainerStyle}>
-        <Heart style={logoIconStyle} />
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-md">
+        {/* Logo */}
+        <div className="flex items-center justify-center w-12 h-12 bg-orange-500 rounded-lg mx-auto mb-6">
+        <Heart className="w-6 h-6 text-white" />
         </div>
 
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937' }}>Acesse sua conta</h2>
-        <p style={{ color: '#6b7280', marginTop: '0.5rem' }}>Bem-vindo(a) de volta!</p>
+        {/* Título */}
+        <div className="text-center mb-8">
+        <h2 className="text-2xl font-bold text-gray-800">Acesse sua conta</h2>
+        <p className="text-gray-500 mt-2">Bem-vindo(a) de volta!</p>
         </div>
 
+        {/* Formulário */}
         <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '1rem' }}>
-            <label htmlFor="email" style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#374151', marginBottom: '0.5rem' }}>
+        <div className="mb-4">
+            <label
+            htmlFor="email"
+            className="block text-sm font-medium text-gray-700 mb-2"
+            >
             Email
             </label>
             <input
@@ -67,11 +42,15 @@ return (
             onChange={(e) => setEmail(e.target.value)}
             placeholder="seuemail@exemplo.com"
             required
-            style={{ width: '100%', padding: '0.5rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
             />
         </div>
-        <div style={{ marginBottom: '1.5rem' }}>
-            <label htmlFor="password" style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#374151', marginBottom: '0.5rem' }}>
+
+        <div className="mb-6">
+            <label
+            htmlFor="password"
+            className="block text-sm font-medium text-gray-700 mb-2"
+            >
             Senha
             </label>
             <input
@@ -81,18 +60,16 @@ return (
             onChange={(e) => setPassword(e.target.value)}
             placeholder="********"
             required
-            style={{ width: '100%', padding: '0.5rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
             />
         </div>
 
-        <div>
-            <button
+        <button
             type="submit"
-            style={buttonStyle}
-            >
+            className="w-full bg-orange-500 text-white font-bold py-3 rounded-md hover:bg-orange-600 transition-colors duration-200"
+        >
             Entrar
-            </button>
-        </div>
+        </button>
         </form>
     </div>
     </div>
