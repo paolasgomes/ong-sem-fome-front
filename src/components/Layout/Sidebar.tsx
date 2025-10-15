@@ -1,7 +1,8 @@
+import { useState } from "react";
 import {
   LayoutDashboard,
   Users,
-  Package,
+  Heart,
   Tag,
   CreditCard,
   Users2,
@@ -13,14 +14,15 @@ import {
 } from "lucide-react";
 
 interface SidebarProps {
-  activeItem?: string;
+  activeItem?: string | null;
 }
 
-export function Sidebar({ activeItem = "doadores" }: SidebarProps) {
+export function Sidebar({ activeItem = null }: SidebarProps) {
+  const [selectedItem, setSelectedItem] = useState(activeItem)
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "doadores", label: "Doadores", icon: Users },
-    { id: "doacoes", label: "Doações", icon: Package },
+    { id: "doacoes", label: "Doações", icon: Heart },
     { id: "estoque", label: "Estoque", icon: Tag },
     { id: "saidas", label: "Saídas / Cestas", icon: CreditCard },
     { id: "colaboradores", label: "Colaboradores", icon: Users2 },
@@ -34,26 +36,27 @@ export function Sidebar({ activeItem = "doadores" }: SidebarProps) {
 
   return (
     <aside className="w-64 bg-white border-r border-gray-200 min-h-screen flex flex-col">
-      <div className="p-4 border-b border-gray-200 flex items-center gap-2">
+      <div className="border-b border-gray-200 flex items-center gap-2" style={{ padding: '1rem' }}>
         <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
-          <Package className="w-5 h-5 text-white" />
+          <Heart className="w-5 h-5 text-white" />
         </div>
-        <span className="font-semibold text-gray-800">ONG Sem Fome</span>
+        <span className="font-semibold text-gray-800" >ONG Sem Fome</span>
       </div>
 
-      <nav className="flex-1 p-4">
-        <ul className="space-y-1">
+      <nav className="flex-1" style={{ padding: '1rem' }}>
+        <ul className="flex flex-col gap-5">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const isActive = item.id === activeItem;
+            const isActive = item.id === selectedItem;
 
             return (
               <li key={item.id}>
                 <button
+                onClick={() => setSelectedItem(item.id)} 
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
                     isActive
-                      ? "bg-orange-50 text-orange-600 font-medium"
-                      : "text-gray-600 hover:bg-gray-50"
+                      ? "bg-orange-500 text-orange-500 font-medium"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-950"
                   }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -65,7 +68,7 @@ export function Sidebar({ activeItem = "doadores" }: SidebarProps) {
         </ul>
       </nav>
 
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-gray-200" style={{ padding: '1rem' }}>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
             <span className="text-sm font-medium text-gray-600">AU</span>
