@@ -1,13 +1,27 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+
 import "./styles/global.css";
-import { Layout } from "./components/Layout/Layout";
-import { DonorsPage } from "./pages/auth/donors/page";
+
+// Componentes e Páginas
+import { Layout } from "./components/Layout/Layout"; 
+import { LoginPage } from "./pages/LoginPage";
+import { DashboardPage } from "./pages/DashboardPage";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <Layout activeMenuItem="doadores">
-      <DonorsPage />
-    </Layout>
+    <BrowserRouter>
+      <Routes>
+        {/* Rota para a página de login (fora do layout principal) */}
+        <Route path="/" element={<LoginPage />} />
+
+        {/* Rota principal que usa o Layout com a Sidebar */}
+        <Route path="/dashboard" element={<Layout />}>
+          {/* A primeira página a ser exibida dentro do Layout */}
+          <Route index element={<DashboardPage />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   </StrictMode>
 );
