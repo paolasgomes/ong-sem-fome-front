@@ -1,16 +1,34 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart } from "lucide-react";
+import { loginRequest, saveSession } from "../services/api"; 
 
-export function LoginPage() {
+export default function LoginPage() {
+const nav = useNavigate();
 const [email, setEmail] = useState("");
 const [password, setPassword] = useState("");
-const navigate = useNavigate();
+const [loading, setLoading] = useState(false);
+const [error, setError] = useState<string | null>(null);
 
-const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    navigate("/dashboard");
-};
+async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+    const { token, user } = await loginRequest(email, password);
+    saveSession(token, user);
+    nav("/dashboard", { replace: true });
+    } catch (err: any) {
+    const msg =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        "Falha no login. Verifique os dados e tente novamente.";
+    setError(msg);
+    } finally {
+    setLoading(false);
+    }
+}
 
 return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -26,13 +44,16 @@ return (
         <p className="text-gray-500 mt-2">Bem-vindo(a) de volta!</p>
         </div>
 
+        {error && (
+        <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded p-2 mb-4">
+            {error}
+        </div>
+        )}
+
         {/* Formulário */}
         <form onSubmit={handleSubmit}>
         <div className="mb-4">
-            <label
-            htmlFor="email"
-            className="block text-sm font-medium text-gray-700 mb-2"
-            >
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
             Email
             </label>
             <input
@@ -47,10 +68,7 @@ return (
         </div>
 
         <div className="mb-6">
-            <label
-            htmlFor="password"
-            className="block text-sm font-medium text-gray-700 mb-2"
-            >
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
             Senha
             </label>
             <input
@@ -66,9 +84,10 @@ return (
 
         <button
             type="submit"
-            className="w-full bg-orange-500 text-white font-bold py-3 rounded-md hover:bg-orange-600 transition-colors duration-200"
+            disabled={loading}
+            className="w-full bg-orange-500 text-white font-bold py-3 rounded-md hover:bg-orange-600 transition-colors duration-200 disabled:opacity-60"
         >
-            Entrar
+            {loading ? "Entrando..." : "Entrar"}
         </button>
         </form>
     </div>
