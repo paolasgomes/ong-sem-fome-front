@@ -8,18 +8,22 @@ import "./styles/global.css";
 import { Layout } from "./components/Layout/Layout"; 
 import { LoginPage } from "./pages/LoginPage";
 import { DashboardPage } from "./pages/DashboardPage";
+import { DonorsPage } from "./pages/auth/donors/DonorsPage";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
       <Routes>
-        {/* Rota para a página de login (fora do layout principal) */}
+        {/* Rota de login (fora do layout principal) */}
         <Route path="/" element={<LoginPage />} />
 
-        {/* Rota principal que usa o Layout com a Sidebar */}
-        <Route path="/dashboard" element={<Layout />}>
-          {/* A primeira página a ser exibida dentro do Layout */}
-          <Route index element={<DashboardPage />} />
+        {/* Rotas protegidas dentro do Layout */}
+        <Route path="/donors" element={<Layout />}>
+          <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="/donors" element={<DonorsPage />} />
+          {/* Se quiser redirecionar "/" para "/dashboard" */}
+          {/* <Route index element={<Navigate to="dashboard" replace />} /> */}
+          {/* <Route index element={<Navigate to="DonorsPage" replace />} /> */}
         </Route>
       </Routes>
     </BrowserRouter>
