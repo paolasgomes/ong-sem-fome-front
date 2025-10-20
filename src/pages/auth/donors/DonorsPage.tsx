@@ -106,7 +106,7 @@ export function DonorsPage() {
           <h1 className="text-2xl font-semibold text-gray-800">Doadores</h1>
           <p className="text-gray-500 text-sm mt-2">Gestão de pessoas físicas e jurídicas</p>
         </div>
-       <button
+      <button
   onClick={handleOpenNew}
   className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium shadow-md transition-all flex items-center gap-2"
   aria-label="Adicionar novo doador"
