@@ -10,7 +10,9 @@ import { Layout } from "./components/Layout/Layout";
 import LoginPage from "./pages/LoginPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { DonorsPage } from "./pages/auth/donors/DonorsPage";
-
+import { FamiliasPage } from "./pages/auth/familias/FamiliasPage"
+import { ColaboradoresPage } from "./pages/auth/colaboradores/ColaboradoresPage"
+import { ErrorPage } from "./pages/ErrorPage"
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -23,7 +25,8 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/dashboard" element={<Layout />}>
           <Route index element={<DashboardPage />} />
           <Route path="donors" element={<DonorsPage />} />
-
+          <Route path="familias" element={<FamiliasPage />} />
+          <Route path="colaboradores" element={<ColaboradoresPage />} />
 
 
           {/* 
@@ -34,10 +37,15 @@ createRoot(document.getElementById("root")!).render(
             é nois :)
           */} 
 
+          <Route path="doacoes" element={<ErrorPage />} />
+          <Route path="estoque" element={<ErrorPage />} />
+          <Route path="saidas" element={<ErrorPage />} />
+          <Route path="campanhas" element={<ErrorPage />} />
+          <Route path="solicitacoes" element={<ErrorPage />} />
+          <Route path="financeiro" element={<ErrorPage />} />
+          <Route path="relatorios" element={<ErrorPage />} />
+          <Route path="configuracoes" element={<ErrorPage />} />
 
-
-
-          
         </Route>
       </Routes>
     </BrowserRouter>

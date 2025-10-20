@@ -38,21 +38,28 @@ export function Sidebar({ activeItem = null }: SidebarProps) {
   ];
 
   return (
-    <aside className="p-2 w-64 bg-white border-r border-gray-200 min-h-screen flex flex-col gap-3">
-      <div className="flex border-b border-gray-200 items-center gap-3 pb-2">
+    <aside
+      className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 
+                flex flex-col justify-between shadow-sm z-40"
+    >
+      {/* Header */}
+      <div className="p-2 border-b border-gray-200 flex items-center gap-3">
         <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
           <Heart className="w-5 h-5 text-white" />
         </div>
-        <span className="font-semibold text-gray-800">ONG Sem Fome</span>
+        <span className="font-semibold text-gray-800 text-sm">ONG Sem Fome</span>
       </div>
 
-      <nav className="flex-1">
-        <ul className="flex flex-col gap-1">
+      {/* Menu */}
+      <nav className="flex-1 overflow-y-auto p-3">
+        <ul className="flex flex-col gap-0.7">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const isActive = 
-              location.pathname === `/dashboard${item.id === "dashboard" ? "" : `/${item.id}`}` ||
-              location.pathname === `/dashboard/${item.id === "dashboard" ? "" : `/${item.id}/`}`;
+            const isActive =
+              location.pathname ===
+                `/dashboard${item.id === "dashboard" ? "" : `/${item.id}`}` ||
+              location.pathname ===
+                `/dashboard/${item.id === "dashboard" ? "" : `${item.id}/`}`;
 
             return (
               <li key={item.id}>
@@ -65,8 +72,8 @@ export function Sidebar({ activeItem = null }: SidebarProps) {
                       : "text-gray-600 hover:bg-gray-100 hover:text-gray-950"
                   }`}
                 >
-                  <Icon className="w-5 h-5" />
-                  <span>{item.label}</span>
+                  <Icon className="w-5 h-5 shrink-0" />
+                  <span className="truncate">{item.label}</span>
                 </Link>
               </li>
             );
@@ -74,7 +81,8 @@ export function Sidebar({ activeItem = null }: SidebarProps) {
         </ul>
       </nav>
 
-      <div className="p-3 border-t border-gray-200">
+      {/* Footer */}
+      <div className="p-2 border-t border-gray-200">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
             <span className="text-sm font-medium text-gray-600">AU</span>
