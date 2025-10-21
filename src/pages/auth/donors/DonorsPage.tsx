@@ -13,31 +13,111 @@ import { DeleteConfirmationModal } from "./ConfirmDeletar";
 
 interface Donor {
   id: number;
-  name: string;
   type: "PF" | "PJ";
+  name: string;
   email: string;
   phone: string;
   totalDonations: number;
   lastDonation: string;
   status: "Ativo" | "Inativo";
+  cpf?: string;
+  street_address: string;
+  street_number: string;
+  street_complement?: string;
+  street_neighborhood: string;
+  city: string;
+  state: string;
+  zip_code: string;
+  observation?: string;
 }
 
 const mockDonors: Donor[] = [
-  { id: 1, name: "João Silva", type: "PF", email: "joao@email.com", phone: "(11) 99999-9999", totalDonations: 15, lastDonation: "14/01/2024", status: "Ativo" },
-  { id: 2, name: "Supermercado ABC Ltda", type: "PJ", email: "contato@supermercadoabc.com", phone: "(11) 3333-3333", totalDonations: 45, lastDonation: "09/01/2024", status: "Ativo" },
-  { id: 3, name: "Maria Santos", type: "PF", email: "maria@email.com", phone: "(11) 88888-8888", totalDonations: 8, lastDonation: "19/12/2023", status: "Inativo" },
-  { id: 4, name: "Padaria do Bairro", type: "PJ", email: "padaria@email.com", phone: "(11) 7777-7777", totalDonations: 23, lastDonation: "07/01/2024", status: "Ativo" },
+  {
+    id: 1,
+    type: "PF",
+    name: "João Silva",
+    email: "joao@email.com",
+    phone: "(11) 99999-9999",
+    totalDonations: 15,
+    lastDonation: "14/01/2024",
+    status: "Ativo",
+    cpf: "12345678901",
+    street_address: "Rua A",
+    street_number: "123",
+    street_neighborhood: "Centro",
+    city: "São Paulo",
+    state: "SP",
+    zip_code: "01000-000"
+  },
+  {
+    id: 2,
+    type: "PJ",
+    name: "Supermercado ABC Ltda",
+    email: "contato@supermercadoabc.com",
+    phone: "(11) 3333-3333",
+    totalDonations: 45,
+    lastDonation: "09/01/2024",
+    status: "Ativo",
+    street_address: "Avenida B",
+    street_number: "500",
+    street_neighborhood: "Centro Empresarial",
+    city: "São Paulo",
+    state: "SP",
+    zip_code: "01001-000"
+  },
+  {
+    id: 3,
+    type: "PF",
+    name: "Maria Santos",
+    email: "maria@email.com",
+    phone: "(11) 88888-8888",
+    totalDonations: 8,
+    lastDonation: "19/12/2023",
+    status: "Inativo",
+    cpf: "98765432100",
+    street_address: "Rua B",
+    street_number: "250",
+    street_neighborhood: "Bairro Jardim",
+    city: "Belo Horizonte",
+    state: "MG",
+    zip_code: "30100-000"
+  },
+  {
+    id: 4,
+    type: "PJ",
+    name: "Padaria do Bairro",
+    email: "padaria@email.com",
+    phone: "(11) 7777-7777",
+    totalDonations: 23,
+    lastDonation: "07/01/2024",
+    status: "Ativo",
+    street_address: "Rua C",
+    street_number: "100",
+    street_neighborhood: "Centro",
+    city: "São Paulo",
+    state: "SP",
+    zip_code: "01002-000"
+  }
 ];
 
 const INITIAL_NEW_DONOR: Donor = {
   id: 0,
+  type: "PF",
   name: '',
-  type: 'PF',
   email: '',
   phone: '',
   totalDonations: 0,
   lastDonation: '',
   status: 'Ativo',
+  cpf: '',
+  street_address: '',
+  street_number: '',
+  street_complement: '',
+  street_neighborhood: '',
+  city: '',
+  state: '',
+  zip_code: '',
+  observation: ''
 };
 
 export function DonorsPage() {
@@ -45,7 +125,7 @@ export function DonorsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('Todos os tipos');
   const [selectedDonor, setSelectedDonor] = useState<Donor | null>(null);
-  const [showFormModal, setShowFormModal] = useState(false); // Modal unificado (Edição/Criação)
+  const [showFormModal, setShowFormModal] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<Donor | null>(null);
   const [newDonor, setNewDonor] = useState<Donor>(INITIAL_NEW_DONOR);
 
@@ -53,11 +133,10 @@ export function DonorsPage() {
     setDonors(mockDonors);
   }, []);
 
+  const totalPF = donors.filter(d => d.type === "PF").length;
+  const totalPJ = donors.filter(d => d.type === "PJ").length;
 
-  const totalPF = donors.filter((d) => d.type === "PF").length;
-  const totalPJ = donors.filter((d) => d.type === "PJ").length;
-
-  const filteredDonors = donors.filter((donor) => {
+  const filteredDonors = donors.filter(donor => {
     const matchesSearch = donor.name.toLowerCase().includes(searchTerm.toLowerCase()) || donor.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'Todos os tipos' || donor.type === (filterType as 'PF' | 'PJ');
     return matchesSearch && matchesType;
@@ -69,20 +148,20 @@ export function DonorsPage() {
   };
 
   const handleOpenNew = () => {
-    setNewDonor(INITIAL_NEW_DONOR); 
-    setSelectedDonor(null); 
+    setNewDonor(INITIAL_NEW_DONOR);
+    setSelectedDonor(null);
     setShowFormModal(true);
   };
 
   const handleSave = (donorToSave: Donor, mode: 'edit' | 'new') => {
     const validationError = validateDonor(donorToSave);
     if (validationError) {
-      alert(validationError); 
+      alert(validationError);
       return;
     }
 
     if (mode === 'edit') {
-      setDonors((prev) => prev.map((d) => (d.id === donorToSave.id ? donorToSave : d)));
+      setDonors(prev => prev.map(d => d.id === donorToSave.id ? donorToSave : d));
       setSelectedDonor(null);
     } else {
       const newId = donors.length > 0 ? Math.max(...donors.map(d => d.id)) + 1 : 1;
@@ -94,7 +173,7 @@ export function DonorsPage() {
 
   const handleDelete = () => {
     if (confirmDelete) {
-      setDonors((prev) => prev.filter((d) => d.id !== confirmDelete.id));
+      setDonors(prev => prev.filter(d => d.id !== confirmDelete.id));
       setConfirmDelete(null);
     }
   };
@@ -106,31 +185,20 @@ export function DonorsPage() {
           <h1 className="text-2xl font-semibold text-gray-800">Doadores</h1>
           <p className="text-gray-500 text-sm mt-2">Gestão de pessoas físicas e jurídicas</p>
         </div>
-      <button
-  onClick={handleOpenNew}
-  className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium shadow-md transition-all flex items-center gap-2"
-  aria-label="Adicionar novo doador"
->
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="currentColor"
-    className="w-5 h-5"
-  >
-    <path
-      fillRule="evenodd"
-      d="M12 3.75a.75.75 0 0 1 .75.75v6.75h6.75a.75.75 0 0 1 0 1.5h-6.75v6.75a.75.75 0 0 1-1.5 0v-6.75H4.5a.75.75 0 0 1 0-1.5h6.75V4.5a.75.75 0 0 1 .75-.75Z"
-      clipRule="evenodd"
-    />
-  </svg>
-  Novo Doador
-</button>
-
+        <button
+          onClick={handleOpenNew}
+          className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium shadow-md transition-all flex items-center gap-2"
+          aria-label="Adicionar novo doador"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+            <path fillRule="evenodd" d="M12 3.75a.75.75 0 0 1 .75.75v6.75h6.75a.75.75 0 0 1 0 1.5h-6.75v6.75a.75.75 0 0 1-1.5 0v-6.75H4.5a.75.75 0 0 1 0-1.5h6.75V4.5a.75.75 0 0 1 .75-.75Z" clipRule="evenodd" />
+          </svg>
+          Novo Doador
+        </button>
       </div>
 
-      {/* Cards de Resumo Adicionados */}
+      {/* Cards de resumo */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        {/* Card Total */}
         <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all flex items-center justify-between border border-gray-100">
           <div>
             <p className="text-xs text-gray-500">Total de Doadores</p>
@@ -138,7 +206,6 @@ export function DonorsPage() {
           </div>
           <div className="bg-orange-50 p-4 rounded-full"><Users className="text-orange-500 w-7 h-7" /></div>
         </div>
-        {/* Card PF */}
         <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all flex items-center justify-between border border-gray-100">
           <div>
             <p className="text-xs text-gray-500">Pessoa Física (PF)</p>
@@ -146,7 +213,6 @@ export function DonorsPage() {
           </div>
           <div className="bg-blue-50 p-4 rounded-full"><User className="text-blue-500 w-7 h-7" /></div>
         </div>
-        {/* Card PJ */}
         <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all flex items-center justify-between border border-gray-100">
           <div>
             <p className="text-xs text-gray-500">Pessoa Jurídica (PJ)</p>
@@ -155,9 +221,8 @@ export function DonorsPage() {
           <div className="bg-green-50 p-4 rounded-full"><Building2 className="text-green-500 w-7 h-7" /></div>
         </div>
       </div>
-      {/* Fim dos Cards de Resumo */}
 
-
+      {/* Busca e filtro */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
         <div className="relative w-full sm:w-1/2">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -180,6 +245,7 @@ export function DonorsPage() {
         </select>
       </div>
 
+      {/* Tabela de doadores */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead className="bg-gray-50 text-gray-600 border-b">
@@ -201,18 +267,16 @@ export function DonorsPage() {
                 </td>
               </tr>
             ) : (
-              filteredDonors.map((donor) => (
+              filteredDonors.map(donor => (
                 <tr key={donor.id} className="border-b hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-5 flex items-center gap-3">
                     {donor.type === 'PF' ? <User className="text-gray-400 w-4 h-4" /> : <Building2 className="text-gray-400 w-4 h-4" />}
                     {donor.name}
                   </td>
                   <td className="px-6 py-5">{donor.type}</td>
-                  <td className="px-6 py-5">
-                    <div className="flex flex-col space-y-1">
-                      <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-gray-400" /> {donor.email}</div>
-                      <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-gray-400" /> {donor.phone}</div>
-                    </div>
+                  <td className="px-6 py-5 flex flex-col space-y-1">
+                    <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-gray-400" /> {donor.email}</div>
+                    <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-gray-400" /> {donor.phone}</div>
                   </td>
                   <td className="px-6 py-5 font-semibold text-orange-600">{donor.totalDonations}</td>
                   <td className="px-6 py-5 text-gray-500">{donor.lastDonation}</td>
@@ -222,18 +286,8 @@ export function DonorsPage() {
                     </span>
                   </td>
                   <td className="px-6 py-5 flex gap-4">
-                    <button
-                      onClick={() => handleOpenEdit(donor)}
-                      className="text-orange-600 hover:text-orange-700 font-medium hover:underline"
-                      aria-label={`Editar doador ${donor.name}`}
-                    >
-                      Editar
-                    </button>
-                    <button
-                      onClick={() => setConfirmDelete(donor)}
-                      className="text-red-600 hover:text-red-700 flex items-center gap-1 font-medium hover:underline"
-                      aria-label={`Excluir doador ${donor.name}`}
-                    >
+                    <button onClick={() => handleOpenEdit(donor)} className="text-orange-600 hover:text-orange-700 font-medium hover:underline">Editar</button>
+                    <button onClick={() => setConfirmDelete(donor)} className="text-red-600 hover:text-red-700 flex items-center gap-1 font-medium hover:underline">
                       <Trash2 className="w-4 h-4" /> Excluir
                     </button>
                   </td>
