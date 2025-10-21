@@ -9,7 +9,7 @@ interface DeleteConfirmationModalProps {
 export function DeleteConfirmationModal({ donorName, onClose, onConfirm }: DeleteConfirmationModalProps) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl p-8 w-[95%] max-w-sm text-center transform transition-all scale-100">
+      <div className="bg-white rounded-xl shadow-2xl p-8 w-full sm:max-w-md text-center transform transition-all scale-100">
         <div className="flex justify-center mb-4">
           <div className="p-3 bg-red-100 rounded-full">
             <Trash2 className="w-6 h-6 text-red-600" />
@@ -17,7 +17,9 @@ export function DeleteConfirmationModal({ donorName, onClose, onConfirm }: Delet
         </div>
         
         <h2 className="text-xl font-semibold text-gray-800 mb-4">Confirmar Exclusão</h2>
-        <p className="text-gray-600 mb-8">Deseja realmente excluir o doador **{donorName}**? Esta ação não pode ser desfeita.</p>
+        <p className="text-gray-600 mb-8">
+          Deseja realmente excluir o doador <span className="font-semibold">{donorName}</span>? Esta ação não pode ser desfeita.
+        </p>
         
         <div className="flex justify-center gap-4">
           <button
