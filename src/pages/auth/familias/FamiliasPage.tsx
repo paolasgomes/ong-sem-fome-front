@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { Home, Users, UserRound, Trash2, Search } from "lucide-react";
+import { Home, Users, UserRound, Trash2, Search, UserPen ,FileUser   } from "lucide-react";
 import { FamilyFormModal, validateFamily } from "./FamiliasForm";
 import { getFamily, createFamily, updateFamily, deleteFamily } from "../../../services/apiFamily";
 import {DeleteFamilyConfirmationModal} from "../familias/DeleteFamilia"
 import type {Pagination, Family } from "../../../types/Family";
+import { FamilyProfileCard } from "../familias/FamilyProfileCard";
 
 const INITIAL_NEW_FAMILY: Family = {
     responsible_name: "",
@@ -38,6 +39,7 @@ export function FamiliasPage() {
     const [selectedFamily, setSelectedFamily] = useState<Family | null>(null);
     const [showFormModal, setShowFormModal] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState<Family | null>(null);
+    const [viewFamily, setViewFamily] = useState<Family | null>(null);
 
     // ======= Carregar famílias =======
     useEffect(() => {
@@ -142,14 +144,14 @@ export function FamiliasPage() {
             </div>
             <button
             onClick={handleOpenNew}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium shadow-md transition-all flex items-center gap-2"
+            className="bg-orange-500 hover:bg-orange-600 cursor-pointer text-white px-6 py-2.5 rounded-lg text-sm font-medium shadow-md transition-all flex items-center gap-2"
             >
             <Home className="w-5 h-5" /> Nova Família
             </button>
         </div>
 
         {/* Cards de resumo */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all flex items-center justify-between border border-gray-100">
             <div>
                 <p className="text-xs text-gray-500">Total de Famílias</p>
@@ -250,19 +252,29 @@ export function FamiliasPage() {
                         {f.is_active ? "Ativa" : "Inativa"}
                         </span>
                     </td>
-                    <td className="px-6 py-5 flex flex-wrap gap-4">
+                    <td className="px-6 py-5">
+                        <div className="flex flex-col gap-2">
                         <button
                         onClick={() => handleOpenEdit(f)}
-                        className="text-orange-600 hover:text-orange-700 font-medium hover:underline"
+                        className="text-orange-600 hover:text-orange-700 flex items-center gap-1 font-medium hover:cursor-pointer"
                         >
-                        Editar
+                        <UserPen className="w-4 h-4" /> Editar
                         </button>
+
                         <button
                         onClick={() => setConfirmDelete(f)}
-                        className="text-red-600 hover:text-red-700 flex items-center gap-1 font-medium hover:underline"
+                        className="text-red-600 hover:text-red-700 flex items-center gap-1 font-medium hover:cursor-pointer"
                         >
                         <Trash2 className="w-4 h-4" /> Excluir
                         </button>
+
+                        <button
+                        onClick={() => setViewFamily(f)}
+                        className="text-blue-600 hover:text-blue-700 flex items-center gap-1 font-medium hover:cursor-pointer"
+                        >
+                        <FileUser className="w-4 h-4" /> Ver perfil
+                        </button>
+                        </div>
                     </td>
                     </tr>
                 ))
@@ -288,6 +300,14 @@ export function FamiliasPage() {
                 loading={loading}
                 />
             )}
+
+        {viewFamily && (
+        <FamilyProfileCard
+            family={viewFamily}
+            onClose={() => setViewFamily(null)}
+        />
+        )}
+
         </div>
     );
 }

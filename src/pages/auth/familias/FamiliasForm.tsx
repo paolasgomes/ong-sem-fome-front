@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { X, User, Mail, Phone } from "lucide-react";
+import { X, User, Mail, Phone, IdCard } from "lucide-react";
 import type {Family} from "../../../types/Family"
-
 
 interface FamilyFormModalProps {
     initialFamily: Family;
@@ -20,12 +19,17 @@ export const validateFamily = (family: Family): string | null => {
         return 'E-mail inválido!';
     }
 
-    if (!family.phone.match(/^\(\d{2}\)\s*\d{4,5}-\d{4}$/)) {
-        return 'Telefone inválido! Use o formato (XX) XXXX-XXXX ou (XX) XXXXX-XXXX.';
+
+    // Validação de telefone (apenas números)
+    const rawPhone = family.phone.replace(/\D/g, '');
+    if (rawPhone.length < 10 || rawPhone.length > 11) {
+        return 'Telefone inválido! Deve conter DDD e número com 10 ou 11 dígitos.';
     }
 
-    if (!family.responsible_cpf || !family.responsible_cpf.match(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/)) {
-        return 'CPF inválido! Deve conter 11 números no formato 000.000.000-00.';
+    // Validação de CPF (apenas números)
+    const rawCPF = family.responsible_cpf.replace(/\D/g, '');
+    if (rawCPF.length !== 11) {
+        return 'CPF inválido! Deve conter 11 dígitos.';
     }
 
     return null;
@@ -33,7 +37,7 @@ export const validateFamily = (family: Family): string | null => {
 
 // ----- Funções de máscara -----
 const formatCPF = (value: string) => {
-    const v = value.replace(/\D/g, '').slice(0, 14); // 123.456.789-10
+    const v = value.replace(/\D/g, '').slice(0, 11); // 123.456.789-10
     return v
         .replace(/(\d{3})(\d)/, '$1.$2')
         .replace(/(\d{3})(\d)/, '$1.$2')
@@ -46,6 +50,11 @@ const formatPhone = (value: string) => {
         return v.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3').replace(/-$/, '');
     }
     return v.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3').replace(/-$/, '');
+};
+
+const formatCEP = (value: string) => {
+    const v = value.replace(/\D/g, '').slice(0, 8); // limita 8 dígitos
+    return v.replace(/(\d{5})(\d)/, '$1-$2');
 };
 
 // ----- Componente DonorFormModal -----
@@ -61,7 +70,6 @@ export function FamilyFormModal({ initialFamily, mode, onClose, onSave }: Family
         setFamilyData({
         ...initialFamily,
         members_count: initialFamily.members_count || 0,
-        //lastDonation: initialFamily.lastDonation || ""
         });
     }, [initialFamily]);
 
@@ -104,6 +112,8 @@ export function FamilyFormModal({ initialFamily, mode, onClose, onSave }: Family
                     onChange={handleChange}
                     className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none transition"
                     />
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+
                 </div>
 
                 {/* CPF (PF) */}
@@ -116,7 +126,7 @@ export function FamilyFormModal({ initialFamily, mode, onClose, onSave }: Family
                     onChange={(e) => setFamilyData(prev => ({ ...prev, responsible_cpf: formatCPF(e.target.value) }))}
                     className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none"
                     />
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <IdCard className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 </div>
 
                 {/* E-mail */}
@@ -158,8 +168,59 @@ export function FamilyFormModal({ initialFamily, mode, onClose, onSave }: Family
 
                 <div className="grid grid-cols-3 gap-4">
                     <input type="text" name="city" placeholder="Cidade" value={familyData.city} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none" />
-                    <input type="text" name="state" placeholder="Estado" value={familyData.state} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none" />
-                    <input type="text" name="zip_code" placeholder="CEP" value={familyData.zip_code} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none" />
+                    <select
+                        name="state"
+                        value={familyData.state}
+                        onChange={(e) =>
+                            setFamilyData(prev => ({
+                                ...prev,
+                                state: e.target.value.toUpperCase()
+                            }))
+                        }
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none"
+                        >
+                            <option value="">Estado</option>
+                            <option value="AC">AC</option>
+                            <option value="AL">AL</option>
+                            <option value="AP">AP</option>
+                            <option value="AM">AM</option>
+                            <option value="BA">BA</option>
+                            <option value="CE">CE</option>
+                            <option value="DF">DF</option>
+                            <option value="ES">ES</option>
+                            <option value="GO">GO</option>
+                            <option value="MA">MA</option>
+                            <option value="MT">MT</option>
+                            <option value="MS">MS</option>
+                            <option value="MG">MG</option>
+                            <option value="PA">PA</option>
+                            <option value="PB">PB</option>
+                            <option value="PR">PR</option>
+                            <option value="PE">PE</option>
+                            <option value="PI">PI</option>
+                            <option value="RJ">RJ</option>
+                            <option value="RN">RN</option>
+                            <option value="RS">RS</option>
+                            <option value="RO">RO</option>
+                            <option value="RR">RR</option>
+                            <option value="SC">SC</option>
+                            <option value="SP">SP</option>
+                            <option value="SE">SE</option>
+                            <option value="TO">TO</option>
+                        </select>
+                    <input
+                        type="text"
+                        name="zip_code"
+                        placeholder="CEP"
+                        value={familyData.zip_code}
+                        onChange={(e) =>
+                            setFamilyData(prev => ({
+                                ...prev,
+                                zip_code: formatCEP(e.target.value)
+                            }))
+                        }
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none"
+                    />
                 </div>
 
                 {/* Quantidade de membros */}
@@ -176,26 +237,20 @@ export function FamilyFormModal({ initialFamily, mode, onClose, onSave }: Family
 
                 {/* Faixa de renda */}
                 <div className="relative">
-                    <input
-                        type="text"
-                        name="income_bracket"
-                        placeholder="Faixa de Renda"
-                        value={familyData.income_bracket}
-                        onChange={handleChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none"
-                        />
-                </div>
 
-                {/* Endereço completo (campo "address" do back) */}
-                <div className="relative">
-                    <input
-                        type="text"
-                        name="address"
-                        placeholder="Endereço Completo"
-                        value={familyData.address}
-                        onChange={handleChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none"
-                        />
+                <select
+                    name="income_bracket"
+                    value={familyData.income_bracket}
+                    onChange={handleChange}
+                    required
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none"
+                    >
+                    <option value="">Selecione a faixa de renda...</option>
+                    <option value="Até 1 salário mínimo">Até 1 salário mínimo</option>
+                    <option value="De 1 a 2 salários mínimos">De 1 a 2 salários mínimos</option>
+                    <option value="De 2 a 3 salários mínimos">De 2 a 3 salários mínimos</option>
+                    <option value="Acima de 3 salários mínimos">Acima de 3 salários mínimos</option>
+                </select>
                 </div>
 
                 {/* Observação */}
