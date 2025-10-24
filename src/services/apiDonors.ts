@@ -1,4 +1,4 @@
-import type { Pagination, Donor } from "../types/Donors";
+import type { Pagination, Donor } from "@/types/donors";
 import axios from "axios";
 
 const getToken = () => localStorage.getItem("@ong:token") || "";

@@ -6,12 +6,12 @@ export type Pagination<T> = {
 };
 
 export type Donor = {
-  id?: number;                   // útil para edição/exclusão
-  type: 'PF' | 'PJ';
+  id?: number;
+  type: 'pessoa_fisica' | 'pessoa_juridica';
   name: string;
   email: string;
   phone: string;
-  cpf?: string;                  // só PF vai ter
+  cpf?: string; // só PF vai ter
   street_number: string;
   street_complement?: string;
   street_neighborhood: string;
@@ -20,7 +20,7 @@ export type Donor = {
   zip_code: string;
   street_address: string;
   observation?: string;
-  status?: 'Ativo' | 'Inativo';  // usado no edit
-  totalDonations?: number;       // usado na tabela
-  lastDonation?: string;         // usado na tabela
+  status?: 'Ativo' | 'Inativo';
+  totalDonations?: number;
+  lastDonation?: string;
 };
