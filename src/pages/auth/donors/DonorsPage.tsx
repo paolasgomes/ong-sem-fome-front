@@ -4,7 +4,7 @@ import { User, Users, Building2, Mail, Phone, Trash2, Search } from "lucide-reac
 import { DonorFormModal, validateDonor } from "./FormularioDoador";
 import { DeleteConfirmationModal } from "./ConfirmDeletar";
 import { getDonors, createDonor, updateDonor, deleteDonor } from "../../../services/apiDonors";
-import type { Donor, Pagination } from "@/types/donors";
+import type { Donor, Pagination } from "../../../types/Donors";
 
 const INITIAL_NEW_DONOR: Donor = {
   type: "PF",
