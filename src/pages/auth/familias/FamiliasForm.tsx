@@ -1,76 +1,89 @@
 import { useState, useEffect } from 'react';
-import { X, User, Home, Users, Phone, Calendar } from "lucide-react";
+import { X, User, Mail, Phone } from "lucide-react";
+import type {Family} from "../../../types/Family"
 
-interface Family {
-id: number;
-responsible: string;
-members: number;
-address: string;
-phone: string;
-income: number;
-lastDelivery: string;
-status: 'Ativa' | 'Inativa';
-}
 
 interface FamilyFormModalProps {
-initialFamily: Family;
-mode: 'edit' | 'new';
-onClose: () => void;
-onSave: (family: Family, mode: 'edit' | 'new') => void;
+    initialFamily: Family;
+    mode: 'edit' | 'new';
+    onClose: () => void;
+    onSave: (family: Family, mode: 'edit' | 'new') => void;
 }
 
+// ----- Funções de validação -----
 export const validateFamily = (family: Family): string | null => {
-if (!family.responsible || !family.address || !family.phone) {
-    return 'Preencha os campos obrigatórios: Responsável, Endereço e Telefone!';
-}
-if (!family.phone.match(/^\(\d{2}\)\s*\d{4,5}-\d{4}$/)) {
-    return 'Telefone inválido! Use o formato (XX) XXXX-XXXX ou (XX) XXXXX-XXXX.';
-}
-if (family.members <= 0) return 'A quantidade de membros deve ser maior que zero.';
-if (family.income < 0) return 'A renda familiar não pode ser negativa.';
-return null;
+    if (!family.responsible_name || !family.email || !family.phone || !family.street_address || !family.street_number || !family.city || !family.state || !family.zip_code) {
+        return 'Preencha todos os campos obrigatórios!';
+    }
+
+    if (!family.email.includes('@') || family.email.length < 5) {
+        return 'E-mail inválido!';
+    }
+
+    if (!family.phone.match(/^\(\d{2}\)\s*\d{4,5}-\d{4}$/)) {
+        return 'Telefone inválido! Use o formato (XX) XXXX-XXXX ou (XX) XXXXX-XXXX.';
+    }
+
+    if (!family.responsible_cpf || !family.responsible_cpf.match(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/)) {
+        return 'CPF inválido! Deve conter 11 números no formato 000.000.000-00.';
+    }
+
+    return null;
 };
 
+// ----- Funções de máscara -----
+const formatCPF = (value: string) => {
+    const v = value.replace(/\D/g, '').slice(0, 14); // 123.456.789-10
+    return v
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+};
+
+const formatPhone = (value: string) => {
+    const v = value.replace(/\D/g, '').slice(0, 11);
+    if (v.length <= 10) {
+        return v.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3').replace(/-$/, '');
+    }
+    return v.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3').replace(/-$/, '');
+};
+
+// ----- Componente DonorFormModal -----
 export function FamilyFormModal({ initialFamily, mode, onClose, onSave }: FamilyFormModalProps) {
-const [familyData, setFamilyData] = useState<Family>(initialFamily);
+    const [familyData, setFamilyData] = useState<Family>({
+        ...initialFamily,
+        //members_count: initialFamily.members_count || 0,
+        //members_count: initialFamily.members_count || ""
+    });
+    const [error, setError] = useState<string | null>(null);
 
-useEffect(() => {
-    setFamilyData(initialFamily);
-}, [initialFamily]);
+    useEffect(() => {
+        setFamilyData({
+        ...initialFamily,
+        members_count: initialFamily.members_count || 0,
+        //lastDonation: initialFamily.lastDonation || ""
+        });
+    }, [initialFamily]);
 
-const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFamilyData(prev => ({
-    ...prev,
-    [name]: name === "members" || name === "income" ? Number(value) : value
-    }));
-};
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        setFamilyData(prev => ({ ...prev, [name]: value }));
+    };
 
-const handleSubmit = () => {
-    const error = validateFamily(familyData);
-    if (error) { alert(error); return; }
-    onSave(familyData, mode);
-};
+    const handleSubmit = () => {
+        const validationError = validateFamily(familyData);
+        if (validationError) {
+        setError(validationError);
+        return;
+        }
+        setError(null);
+        onSave(familyData, mode);
+    };
 
-return (
-    // CAMADA EXTERNA: ocupa a tela toda
-    <div className="fixed inset-0 z-50">
-    {/* Fundo escuro */}
-    <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-
-    {/* CONTAINER ROLÁVEL */}
-    <div className="absolute inset-0 overflow-y-auto">
-        {/* Centraliza e garante espaço de respiro mesmo com zoom */}
-        <div className="min-h-full flex items-center justify-center p-4">
-        {/* CONTEÚDO DO MODAL: limita a altura e permite rolar por dentro */}
-        <div className="relative w-full max-w-lg bg-white rounded-xl shadow-2xl
-                        p-8 sm:p-8
-                        max-h-[calc(100vh-2rem)] sm:max-h-[90vh] overflow-y-auto">
-            <button
-            onClick={onClose}
-            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition"
-            aria-label="Fechar modal"
-            >
+    return (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl p-8 w-[95%] max-w-lg shadow-2xl relative transform transition-all scale-100 overflow-y-auto max-h-[90vh]">
+            <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition" aria-label="Fechar modal">
             <X className="w-5 h-5" />
             </button>
 
@@ -78,167 +91,143 @@ return (
             {mode === 'edit' ? "Editar Família" : "Cadastrar Nova Família"}
             </h2>
 
+            {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+
             <div className="space-y-4">
-            {/* Responsável */}
-            <div>
-                <label htmlFor="responsible" className="block text-xs text-gray-600 font-medium mb-1">
-                Responsável *
-                </label>
+                {/* Nome / Razão Social */}
                 <div className="relative">
-                <input
-                    id="responsible"
+                    <input
                     type="text"
-                    name="responsible"
+                    name="responsible_name"
                     placeholder="Nome do Responsável"
-                    value={familyData.responsible}
+                    value={familyData.responsible_name}
                     onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none"
-                />
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none transition"
+                    />
                 </div>
-            </div>
 
-            {/* Membros */}
-            <div>
-                <label htmlFor="members" className="block text-xs text-gray-600 font-medium mb-1">
-                Membros *
-                </label>
+                {/* CPF (PF) */}
                 <div className="relative">
-                <input
-                    id="members"
-                    type="number"
-                    name="members"
-                    placeholder="Quantidade de Membros"
-                    value={familyData.members}
-                    onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none"
-                    min={1}
-                />
-                <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                </div>
-            </div>
-
-            {/* Endereço */}
-            <div>
-                <label htmlFor="address" className="block text-xs text-gray-600 font-medium mb-1">
-                Endereço *
-                </label>
-                <div className="relative">
-                <input
-                    id="address"
+                    <input
                     type="text"
-                    name="address"
-                    placeholder="Endereço Completo"
-                    value={familyData.address}
+                    name="responsible_cpf"
+                    placeholder="CPF"
+                    value={familyData.responsible_cpf}
+                    onChange={(e) => setFamilyData(prev => ({ ...prev, responsible_cpf: formatCPF(e.target.value) }))}
+                    className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none"
+                    />
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                </div>
+
+                {/* E-mail */}
+                <div className="relative">
+                    <input
+                    type="email"
+                    name="email"
+                    placeholder="E-mail"
+                    value={familyData.email}
                     onChange={handleChange}
                     className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none"
-                />
-                <Home className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    />
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 </div>
-            </div>
 
-            {/* Telefone (com máscara) */}
-            <div>
-                <label htmlFor="phone" className="block text-xs text-gray-600 font-medium mb-1">
-                Telefone *
-                </label>
+                {/* Telefone */}
                 <div className="relative">
-                <input
-                    id="phone"
+                    <input
                     type="text"
                     name="phone"
                     placeholder="Telefone (Ex: (11) 99999-9999)"
                     value={familyData.phone}
-                    onChange={(e) => {
-                    let value = e.target.value.replace(/\D/g, "");
-                    if (value.length > 11) value = value.slice(0, 11);
-                    if (value.length > 6) {
-                        value = value.replace(/^(\d{2})(\d{5})(\d{0,4}).*/, "($1) $2-$3");
-                    } else if (value.length > 2) {
-                        value = value.replace(/^(\d{2})(\d{0,5})/, "($1) $2");
-                    } else if (value.length > 0) {
-                        value = value.replace(/^(\d{0,2})/, "($1");
-                    }
-                    setFamilyData(prev => ({ ...prev, phone: value }));
-                    }}
+                    onChange={(e) => setFamilyData(prev => ({ ...prev, phone: formatPhone(e.target.value) }))}
                     className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none"
-                />
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    />
+                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 </div>
-            </div>
 
-            {/* Renda */}
-            <div>
-                <label htmlFor="income" className="block text-xs text-gray-600 font-medium mb-1">
-                Renda Familiar (R$)
-                </label>
+                {/* Endereço e demais campos */}
+                <div className="grid grid-cols-2 gap-4">
+                    <input type="text" name="street_address" placeholder="Rua" value={familyData.street_address} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none" />
+                    <input type="text" name="street_number" placeholder="Número" value={familyData.street_number} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                    <input type="text" name="street_complement" placeholder="Complemento" value={familyData.street_complement || ''} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none" />
+                    <input type="text" name="street_neighborhood" placeholder="Bairro" value={familyData.street_neighborhood} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none" />
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                    <input type="text" name="city" placeholder="Cidade" value={familyData.city} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none" />
+                    <input type="text" name="state" placeholder="Estado" value={familyData.state} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none" />
+                    <input type="text" name="zip_code" placeholder="CEP" value={familyData.zip_code} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none" />
+                </div>
+
+                {/* Quantidade de membros */}
                 <div className="relative">
-                <input
-                    id="income"
-                    type="number"
-                    name="income"
-                    placeholder="Renda Familiar (R$)"
-                    value={familyData.income}
-                    onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none"
-                    min={0}
-                />
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">R$</span>
+                    <input
+                        type="number"
+                        name="members_count"
+                        placeholder="Quantidade de Membros"
+                        value={familyData.members_count}
+                        onChange={handleChange}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none"
+                        />
                 </div>
-            </div>
 
-            {/* Última Entrega */}
-            <div>
-                <label htmlFor="lastDelivery" className="block text-xs text-gray-600 font-medium mb-1">
-                Última Entrega
-                </label>
+                {/* Faixa de renda */}
                 <div className="relative">
-                <input
-                    id="lastDelivery"
-                    type="date"
-                    name="lastDelivery"
-                    value={familyData.lastDelivery ? familyData.lastDelivery.slice(0, 10) : ""}
-                    onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-3 text-sm text-gray-700 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none"
-                />
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                        type="text"
+                        name="income_bracket"
+                        placeholder="Faixa de Renda"
+                        value={familyData.income_bracket}
+                        onChange={handleChange}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none"
+                        />
                 </div>
-            </div>
 
-            {/* Status (somente edição) */}
-            {mode === 'edit' && (
-                <div>
-                <label htmlFor="status" className="block text-xs text-gray-600 font-medium mb-1">
-                    Status
-                </label>
+                {/* Endereço completo (campo "address" do back) */}
+                <div className="relative">
+                    <input
+                        type="text"
+                        name="address"
+                        placeholder="Endereço Completo"
+                        value={familyData.address}
+                        onChange={handleChange}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none"
+                        />
+                </div>
+
+                {/* Observação */}
+                <div className="relative">
+                    <textarea
+                        name="observation"
+                        placeholder="Observações"
+                        value={familyData.observation}
+                        onChange={handleChange}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none"
+                    />
+                </div>
+
+                {/* Status Ativo/Inativo */}
                 <div className="relative">
                     <select
-                    id="status"
-                    name="status"
-                    value={familyData.status}
-                    onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm text-gray-700 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none bg-white appearance-none pr-10"
-                    >
-                    <option value="Ativa">Ativa</option>
-                    <option value="Inativa">Inativa</option>
+                        name="is_active"
+                        value={familyData.is_active ? 'true' : 'false'}
+                        onChange={(e) => setFamilyData(prev => ({ ...prev, is_active: e.target.value === 'true' }))}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none"
+                        >
+                        <option value="true">Ativo</option>
+                        <option value="false">Inativo</option>
                     </select>
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-                    &#9660;
-                    </span>
                 </div>
-                </div>
-            )}
+
             </div>
 
-            <button
-            onClick={handleSubmit}
-            className="mt-6 w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition-colors shadow-md hover:shadow-lg"
-            >
+            <button onClick={handleSubmit} className="mt-6 w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition-colors shadow-md hover:shadow-lg">
             {mode === 'edit' ? "Salvar Alterações" : "Cadastrar Família"}
             </button>
         </div>
         </div>
-    </div>
-    </div>
-);
+    );
 }
