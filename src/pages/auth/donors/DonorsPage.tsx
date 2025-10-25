@@ -1,188 +1,229 @@
 // DonorsPage.tsx
-import { useState, useEffect } from "react"; 
-import { User, Users, Building2, Mail, Phone, Trash2, Search } from "lucide-react"; 
-import { DonorFormModal, validateDonor } from "./FormularioDoador"; 
-import { DeleteConfirmationModal } from "./ConfirmDeletar"; 
-import { getDonors, createDonor, updateDonor, deleteDonor } from "../../../services/apiDonors"; 
-import type { Donor, Pagination } from "@/types/donors"; 
+import { useState, useEffect } from "react";
+import { User, Users, Building2, Mail, Phone, Trash2, Search } from "lucide-react";
+import { DonorFormModal, validateDonor } from "./FormularioDoador";
+import { DeleteConfirmationModal } from "./ConfirmDeletar";
+import { getDonors, createDonor, updateDonor, deleteDonor } from "../../../services/apiDonors";
+import type { Donor, Pagination } from "../../../types/Donors";
 
-const INITIAL_NEW_DONOR: Donor = { 
-  type: "pessoa_fisica", // padrão da API
-  name: "", 
-  email: "", 
-  phone: "", 
-  cpf: "", 
-  street_address: "", 
-  street_number: "", 
-  street_complement: "", 
-  street_neighborhood: "", 
-  city: "", 
-  state: "", 
-  zip_code: "", 
-  observation: "", 
-  totalDonations: 0, 
-  lastDonation: "", 
-  status: "Ativo", 
-}; 
+const INITIAL_NEW_DONOR: Donor = {
+  type: "pessoa_fisica",
+  name: "",
+  email: "",
+  phone: "",
+  cpf: "",
+  cnpj: "",
+  street_address: "",
+  street_number: "",
+  street_complement: "",
+  street_neighborhood: "",
+  city: "",
+  state: "",
+  zip_code: "",
+  observation: "",
+  totalDonations: 0,
+  lastDonation: "",
+  status: "Ativo",
+};
 
-export function DonorsPage() { 
-  const [donorsData, setDonorsData] = useState<Pagination<Donor>>({ limit: 10, page: 1, totalPages: 1, results: [], }); 
-  const [loading, setLoading] = useState(false); 
-  const [searchTerm, setSearchTerm] = useState(""); 
-  const [filterType, setFilterType] = useState("Todos os tipos"); 
-  const [selectedDonor, setSelectedDonor] = useState<Donor | null>(null); 
-  const [showFormModal, setShowFormModal] = useState(false); 
-  const [confirmDelete, setConfirmDelete] = useState<Donor | null>(null); 
+export function DonorsPage() {
+  const [donorsData, setDonorsData] = useState<Pagination<Donor>>({
+    limit: 10,
+    page: 1,
+    totalPages: 1,
+    results: [],
+  });
+  const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState("Todos os tipos");
+  const [selectedDonor, setSelectedDonor] = useState<Donor | null>(null);
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<Donor | null>(null);
 
-  useEffect(() => { fetchDonors(); }, []); 
+  useEffect(() => {
+    fetchDonors();
+  }, []);
 
-  const fetchDonors = async () => { 
-    try { 
-      setLoading(true); 
-      const data = await getDonors(); 
-      setDonorsData(data); 
-    } catch (error) { 
-      console.error(error); 
-      alert("Falha ao carregar doadores."); 
-    } finally { 
-      setLoading(false); 
-    } 
-  }; 
+  const fetchDonors = async () => {
+  try {
+    setLoading(true);
+    const data = await getDonors();
 
-  const handleSave = async (donor: Donor, mode: "new" | "edit") => { 
-    const validationError = validateDonor(donor); 
-    if (validationError) return alert(validationError); 
+    // Mapear snake_case do backend para camelCase do frontend
+    const mappedResults = data.results.map((d: any) => ({
+      ...d,
+      totalDonations: d.total_donations,
+      lastDonation: d.last_donation,
+    }));
 
-    const duplicate = donorsData.results.find( 
-      (d) => (d.email === donor.email || (d.type === "pessoa_fisica" && donor.cpf && d.cpf === donor.cpf)) && d.id !== donor.id 
-    ); 
-    if (duplicate) return alert("Já existe um doador com este CPF ou email"); 
+    setDonorsData({
+      ...data,
+      results: mappedResults,
+    });
+  } catch (error) {
+    console.error(error);
+    alert("Falha ao carregar doadores.");
+  } finally {
+    setLoading(false);
+  }
+};
 
-    const donorToSend = { ...donor }; 
-    if (donor.type === "pessoa_juridica") delete donorToSend.cpf; 
 
-    try { 
-      if (mode === "edit" && donor.id) { 
-        await updateDonor(donor.id, donorToSend); 
-        setDonorsData((prev) => ({ 
-          ...prev, 
-          results: prev.results.map((d) => (d.id === donor.id ? donorToSend : d)), 
-        })); 
-      } else { 
-        const newDonor = await createDonor(donorToSend); 
-        setDonorsData((prev) => ({ ...prev, results: [...prev.results, newDonor], })); 
-      } 
-      setShowFormModal(false); 
-    } catch (error: any) { 
-      console.error(error); 
-      alert(error.response?.data?.error || "Erro ao salvar o doador."); 
-    } 
-  }; 
+ const handleSave = async (donor: Donor, mode: "new" | "edit") => {
+  const validationError = validateDonor(donor);
+  if (validationError) return alert(validationError);
 
-  const handleDelete = async () => { 
-    if (!confirmDelete?.id) return; 
-    try { 
-      await deleteDonor(confirmDelete.id); 
-      setDonorsData((prev) => ({ 
-        ...prev, 
-        results: prev.results.filter((d) => d.id !== confirmDelete.id), 
-      })); 
-      setConfirmDelete(null); 
-    } catch (error) { 
-      console.error(error); 
-      alert("Erro ao excluir o doador."); 
-    } 
-  }; 
+  const donorToSend: any = { ...donor };
+  if (donor.type === "pessoa_fisica") {
+    delete donorToSend.cnpj;
+    donorToSend.cpf = donor.cpf?.replace(/\D/g, '');
+  } else {
+    delete donorToSend.cpf;
+    donorToSend.cnpj = donor.cnpj?.replace(/\D/g, '');
+  }
 
-  const handleOpenEdit = (donor: Donor) => { 
-    setSelectedDonor(donor); 
-    setShowFormModal(true); 
-  }; 
+  donorToSend.totalDonations = donorToSend.totalDonations || 0;
+  donorToSend.lastDonation = donorToSend.lastDonation || "";
 
-  const handleOpenNew = () => { 
-    setSelectedDonor(null); 
-    setShowFormModal(true); 
-  }; 
+  try {
+    if (mode === "edit" && donor.id) {
+      await updateDonor(donor.id, donorToSend);
+    } else {
+      await createDonor(donorToSend);
+    }
+    setShowFormModal(false);
+    fetchDonors(); 
+  } catch (error: any) {
+    console.error(error);
+    alert(error.response?.data?.error || "Erro ao salvar o doador.");
+  }
+};
 
-  // ----- Filtros e contagem ----- 
-  const totalPF = donorsData.results.filter((d) => d.type === "pessoa_fisica").length; 
-  const totalPJ = donorsData.results.filter((d) => d.type === "pessoa_juridica").length; 
-  const filteredDonors = donorsData.results.filter((donor) => { 
-    const matchesSearch = donor.name.toLowerCase().includes(searchTerm.toLowerCase()) || donor.email.toLowerCase().includes(searchTerm.toLowerCase()); 
-    const matchesType = filterType === "Todos os tipos" || (filterType === "PF" && donor.type === "pessoa_fisica") || (filterType === "PJ" && donor.type === "pessoa_juridica"); 
-    return matchesSearch && matchesType; 
-  }); 
 
-  return ( 
-    <div className="p-10 bg-gray-50 min-h-screen text-sm text-gray-700 relative"> 
-      {/* Cabeçalho */} 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4"> 
-        <div> 
-          <h1 className="text-2xl font-semibold text-gray-800">Doadores</h1> 
-          <p className="text-gray-500 text-sm mt-2">Gestão de pessoas físicas e jurídicas</p> 
-        </div> 
-        <button onClick={handleOpenNew} className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium shadow-md transition-all flex items-center gap-2" > 
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5" > 
-            <path fillRule="evenodd" d="M12 3.75a.75.75 0 0 1 .75.75v6.75h6.75a.75.75 0 0 1 0 1.5h-6.75v6.75a.75.75 0 0 1-1.5 0v-6.75H4.5a.75.75 0 0 1 0-1.5h6.75V4.5a.75.75 0 0 1 .75-.75Z" clipRule="evenodd" /> 
-          </svg> Novo Doador 
-        </button> 
-      </div> 
+  const handleDelete = async () => {
+    if (!confirmDelete?.id) return;
+    try {
+      await deleteDonor(confirmDelete.id);
+      setDonorsData((prev) => ({
+        ...prev,
+        results: prev.results.filter((d) => d.id !== confirmDelete.id),
+      }));
+      setConfirmDelete(null);
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao excluir o doador.");
+    }
+  };
 
-      {/* Cards resumo */} 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8"> 
-        <div className="bg-white rounded-xl p-6 shadow-sm flex items-center justify-between border border-gray-100"> 
-          <div> 
-            <p className="text-xs text-gray-500">Total de Doadores</p> 
-            <p className="text-3xl font-bold mt-1 text-gray-800">{donorsData.results.length}</p> 
-          </div> 
-          <div className="bg-orange-50 p-4 rounded-full"> 
-            <Users className="text-orange-500 w-7 h-7" /> 
-          </div> 
-        </div> 
-        <div className="bg-white rounded-xl p-6 shadow-sm flex items-center justify-between border border-gray-100"> 
-          <div> 
-            <p className="text-xs text-gray-500">Pessoa Física (PF)</p> 
-            <p className="text-3xl font-bold mt-1 text-gray-800">{totalPF}</p> 
-          </div> 
-          <div className="bg-blue-50 p-4 rounded-full"> 
-            <User className="text-blue-500 w-7 h-7" /> 
-          </div> 
-        </div> 
-        <div className="bg-white rounded-xl p-6 shadow-sm flex items-center justify-between border border-gray-100"> 
-          <div> 
-            <p className="text-xs text-gray-500">Pessoa Jurídica (PJ)</p> 
-            <p className="text-3xl font-bold mt-1 text-gray-800">{totalPJ}</p> 
-          </div> 
-          <div className="bg-green-50 p-4 rounded-full"> 
-            <Building2 className="text-green-500 w-7 h-7" /> 
-          </div> 
-        </div> 
-      </div> 
+  const handleOpenEdit = (donor: Donor) => {
+    setSelectedDonor(donor);
+    setShowFormModal(true);
+  };
 
-      {/* Busca e filtro */} 
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4 bg-white p-4 rounded-lg shadow-sm border border-gray-100"> 
-        <div className="relative w-full sm:w-1/2"> 
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" /> 
-          <input type="text" placeholder="Buscar por nome ou e-mail..." onChange={(e) => setSearchTerm(e.target.value)} className="pl-12 pr-4 py-3 w-full border border-gray-200 rounded-md text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50" /> 
-        </div> 
-        <select onChange={(e) => setFilterType(e.target.value)} className="border border-gray-200 rounded-md px-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50" > 
-          <option>Todos os tipos</option> 
-          <option>PF</option> 
-          <option>PJ</option> 
-        </select> 
-      </div> 
+  const handleOpenNew = () => {
+    setSelectedDonor(null);
+    setShowFormModal(true);
+  };
 
-      {/* Tabela */} 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-x-auto"> 
-        {loading ? ( 
-          <div className="text-center py-10 text-gray-500">Carregando...</div> 
-        ) : ( 
-          <table className="min-w-full text-sm"> 
-            <thead className="bg-gray-50 text-gray-600 border-b"> 
-              <tr> 
-                <th className="text-left px-6 py-4 font-medium">Nome / Razão Social</th> 
-                <th className="text-left px-6 py-4 font-medium">Tipo</th> 
-                                <th className="text-left px-6 py-4 font-medium">Contato</th>
+  const totalPF = donorsData.results.filter((d) => d.type === "pessoa_fisica").length;
+  const totalPJ = donorsData.results.filter((d) => d.type === "pessoa_juridica").length;
+  const filteredDonors = donorsData.results.filter((donor) => {
+    const matchesSearch =
+      donor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      donor.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType =
+      filterType === "Todos os tipos" ||
+      (filterType === "PF" && donor.type === "pessoa_fisica") ||
+      (filterType === "PJ" && donor.type === "pessoa_juridica");
+    return matchesSearch && matchesType;
+  });
+
+  return (
+    <div className="p-10 bg-gray-50 min-h-screen text-sm text-gray-700 relative">
+      {/* Cabeçalho */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-800">Doadores</h1>
+          <p className="text-gray-500 text-sm mt-2">Gestão de pessoas físicas e jurídicas</p>
+        </div>
+        <button
+          onClick={handleOpenNew}
+          className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium shadow-md transition-all flex items-center gap-2"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+            <path
+              fillRule="evenodd"
+              d="M12 3.75a.75.75 0 0 1 .75.75v6.75h6.75a.75.75 0 0 1 0 1.5h-6.75v6.75a.75.75 0 0 1-1.5 0v-6.75H4.5a.75.75 0 0 1 0-1.5h6.75V4.5a.75.75 0 0 1 .75-.75Z"
+              clipRule="evenodd"
+            />
+          </svg>{" "}
+          Novo Doador
+        </button>
+      </div>
+
+      {/* Cards resumo */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="bg-white rounded-xl p-6 shadow-sm flex items-center justify-between border border-gray-100">
+          <div>
+            <p className="text-xs text-gray-500">Total de Doadores</p>
+            <p className="text-3xl font-bold mt-1 text-gray-800">{donorsData.results.length}</p>
+          </div>
+          <div className="bg-orange-50 p-4 rounded-full">
+            <Users className="text-orange-500 w-7 h-7" />
+          </div>
+        </div>
+        <div className="bg-white rounded-xl p-6 shadow-sm flex items-center justify-between border border-gray-100">
+          <div>
+            <p className="text-xs text-gray-500">Pessoa Física (PF)</p>
+            <p className="text-3xl font-bold mt-1 text-gray-800">{totalPF}</p>
+          </div>
+          <div className="bg-blue-50 p-4 rounded-full">
+            <User className="text-blue-500 w-7 h-7" />
+          </div>
+        </div>
+        <div className="bg-white rounded-xl p-6 shadow-sm flex items-center justify-between border border-gray-100">
+          <div>
+            <p className="text-xs text-gray-500">Pessoa Jurídica (PJ)</p>
+            <p className="text-3xl font-bold mt-1 text-gray-800">{totalPJ}</p>
+          </div>
+          <div className="bg-green-50 p-4 rounded-full">
+            <Building2 className="text-green-500 w-7 h-7" />
+          </div>
+        </div>
+      </div>
+
+      {/* Busca e filtro */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+        <div className="relative w-full sm:w-1/2">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <input
+            type="text"
+            placeholder="Buscar por nome ou e-mail..."
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-12 pr-4 py-3 w-full border border-gray-200 rounded-md text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50"
+          />
+        </div>
+        <select
+          onChange={(e) => setFilterType(e.target.value)}
+          className="border border-gray-200 rounded-md px-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50"
+        >
+          <option>Todos os tipos</option>
+          <option>PF</option>
+          <option>PJ</option>
+        </select>
+      </div>
+
+      {/* Tabela */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-x-auto">
+        {loading ? (
+          <div className="text-center py-10 text-gray-500">Carregando...</div>
+        ) : (
+          <table className="min-w-full text-sm">
+            <thead className="bg-gray-50 text-gray-600 border-b">
+              <tr>
+                <th className="text-left px-6 py-4 font-medium">Nome / Razão Social</th>
+                <th className="text-left px-6 py-4 font-medium">Tipo</th>
+                <th className="text-left px-6 py-4 font-medium">Contato</th>
                 <th className="text-left px-6 py-4 font-medium">Total Doações</th>
                 <th className="text-left px-6 py-4 font-medium">Última Doação</th>
                 <th className="text-left px-6 py-4 font-medium">Status</th>
@@ -270,4 +311,3 @@ export function DonorsPage() {
     </div>
   );
 }
-

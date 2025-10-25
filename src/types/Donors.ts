@@ -12,6 +12,7 @@ export type Donor = {
   email: string;
   phone: string;
   cpf?: string; // só PF vai ter
+  cnpj?: string;
   street_number: string;
   street_complement?: string;
   street_neighborhood: string;
