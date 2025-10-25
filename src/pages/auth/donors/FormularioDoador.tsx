@@ -1,31 +1,13 @@
 import { useState, useEffect } from 'react'; 
 import { X, User, Building2, Mail, Phone } from "lucide-react"; 
+import type { Donor} from "../../../types/Donors";
 
-export interface Donor { 
-  id?: number; 
-  type: 'pessoa_fisica' | 'pessoa_juridica'; 
-  name: string; 
-  email: string; 
-  phone: string; 
-  cpf?: string; 
-  street_address: string; 
-  street_number: string; 
-  street_complement?: string; 
-  street_neighborhood: string; 
-  city: string; 
-  state: string; 
-  zip_code: string; 
-  observation?: string; 
-  status?: 'Ativo' | 'Inativo'; 
-  totalDonations: number; 
-  lastDonation: string; 
-} 
 
 interface DonorFormModalProps { 
   initialDonor: Donor; 
   mode: 'edit' | 'new'; 
   onClose: () => void; 
-  onSave: (donor: any, mode: 'edit' | 'new') => void; 
+  onSave: (donor: Donor, mode: 'edit' | 'new') => void; 
 } 
 
 // ----- Validação ----- 
@@ -44,7 +26,11 @@ export const validateDonor = (donor: Donor): string | null => {
     if (!cpfMasked.match(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/)) { 
       return 'CPF inválido! Deve conter 11 números no formato 000.000.000-00.'; 
     } 
-  } 
+  } else {
+    if (!donor.cnpj || donor.cnpj.replace(/\D/g, '').length !== 14) {
+      return 'CNPJ inválido! Deve conter 14 números.';
+    }
+  }
   return null; 
 }; 
 
@@ -55,6 +41,14 @@ const formatCPF = (value: string) => {
           .replace(/(\d{3})(\d)/, '$1.$2') 
           .replace(/(\d{3})(\d{1,2})$/, '$1-$2'); 
 }; 
+
+const formatCNPJ = (value: string) => {
+  const v = value.replace(/\D/g, '').slice(0, 14);
+  return v.replace(/^(\d{2})(\d)/, '$1.$2')
+          .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+          .replace(/\.(\d{3})(\d)/, '.$1/$2')
+          .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+}
 
 const formatPhone = (value: string) => { 
   const v = value.replace(/\D/g, '').slice(0, 11); 
@@ -73,7 +67,8 @@ export function DonorFormModal({ initialDonor, mode, onClose, onSave }: DonorFor
     totalDonations: initialDonor.totalDonations || 0, 
     lastDonation: initialDonor.lastDonation || "", 
     phone: formatPhone(initialDonor.phone || ''), 
-    cpf: initialDonor.cpf ? formatCPF(initialDonor.cpf) : '' 
+    cpf: initialDonor.cpf ? formatCPF(initialDonor.cpf) : '', 
+    cnpj: initialDonor.cnpj ? formatCNPJ(initialDonor.cnpj) : ''
   }); 
 
   const [error, setError] = useState<string | null>(null); 
@@ -84,7 +79,8 @@ export function DonorFormModal({ initialDonor, mode, onClose, onSave }: DonorFor
       totalDonations: initialDonor.totalDonations || 0, 
       lastDonation: initialDonor.lastDonation || "", 
       phone: formatPhone(initialDonor.phone || ''), 
-      cpf: initialDonor.cpf ? formatCPF(initialDonor.cpf) : '' 
+      cpf: initialDonor.cpf ? formatCPF(initialDonor.cpf) : '', 
+      cnpj: initialDonor.cnpj ? formatCNPJ(initialDonor.cnpj) : ''
     }); 
   }, [initialDonor]); 
 
@@ -105,28 +101,12 @@ export function DonorFormModal({ initialDonor, mode, onClose, onSave }: DonorFor
     } 
     setError(null); 
 
-    // Payload garantido para PF e PJ 
-    const payload: any = { 
-      type: donorData.type, 
-      name: donorData.name, 
-      email: donorData.email, 
-      phone: donorData.phone.replace(/\D/g, ''), 
-      street_address: donorData.street_address, 
-      street_number: donorData.street_number, 
-      street_complement: donorData.street_complement || '', 
-      street_neighborhood: donorData.street_neighborhood, 
-      city: donorData.city, 
-      state: donorData.state, 
-      zip_code: donorData.zip_code, 
-      observation: donorData.observation || '', 
-      cpf: donorData.type === 'pessoa_fisica' ? donorData.cpf?.replace(/\D/g, '') : "" // string vazia para PJ 
+    const payload: Donor = { 
+      ...donorData,
+      phone: donorData.phone.replace(/\D/g, ''),
+      cpf: donorData.type === 'pessoa_fisica' ? donorData.cpf?.replace(/\D/g, '') : undefined,
+      cnpj: donorData.type === 'pessoa_juridica' ? donorData.cnpj?.replace(/\D/g, '') : undefined
     }; 
-
-    if (mode === 'edit') { 
-      payload.status = donorData.status; 
-      payload.totalDonations = donorData.totalDonations; 
-      payload.lastDonation = donorData.lastDonation; 
-    } 
 
     onSave(payload, mode); 
   }; 
@@ -141,6 +121,7 @@ export function DonorFormModal({ initialDonor, mode, onClose, onSave }: DonorFor
           {mode === 'edit' ? "Editar Doador" : "Cadastrar Novo Doador"} 
         </h2> 
         {error && <p className="text-red-500 text-sm mb-4">{error}</p>} 
+
         <div className="space-y-4"> 
           {/* Tipo */} 
           {mode === 'new' && ( 
@@ -160,13 +141,19 @@ export function DonorFormModal({ initialDonor, mode, onClose, onSave }: DonorFor
             {donorData.type === 'pessoa_fisica' ? <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /> : <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />} 
           </div> 
 
-          {/* CPF */} 
+          {/* CPF / CNPJ */} 
           {donorData.type === 'pessoa_fisica' && ( 
             <div className="relative"> 
               <input type="text" name="cpf" placeholder="CPF" value={donorData.cpf || ''} onChange={(e) => setDonorData(prev => ({ ...prev, cpf: formatCPF(e.target.value) }))} className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none"/> 
               <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"/> 
             </div> 
-          )} 
+          )}
+          {donorData.type === 'pessoa_juridica' && (
+            <div className="relative">
+              <input type="text" name="cnpj" placeholder="CNPJ" value={donorData.cnpj || ''} onChange={(e) => setDonorData(prev => ({ ...prev, cnpj: formatCNPJ(e.target.value) }))} className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none"/>
+              <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"/>
+            </div>
+          )}
 
           {/* E-mail */} 
           <div className="relative"> 
@@ -211,15 +198,22 @@ export function DonorFormModal({ initialDonor, mode, onClose, onSave }: DonorFor
           </div> 
 
           {/* Status (apenas edição) */} 
-          {mode === 'edit' && ( 
-            <div className="relative"> 
-              <select name="status" value={donorData.status} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm text-gray-700 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none bg-white appearance-none pr-10"> 
-                <option value="Ativo">Ativo</option> 
-                <option value="Inativo">Inativo</option> 
-              </select> 
-              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">&#9660;</span> 
+          <div className="relative">
+              <select
+                name="status"
+                value={donorData.status || "Ativo"}
+                onChange={(e) =>
+                  setDonorData(prev => ({
+                    ...prev,
+                    status: e.target.value as 'Ativo' | 'Inativo'
+                  }))
+                }
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none"
+              >
+                <option value="Ativo">Ativo</option>
+                <option value="Inativo">Inativo</option>
+              </select>
             </div> 
-          )} 
         </div> 
         <button onClick={handleSubmit} className="mt-6 w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition-colors shadow-md hover:shadow-lg"> 
           {mode === 'edit' ? "Salvar Alterações" : "Cadastrar Doador"} 
