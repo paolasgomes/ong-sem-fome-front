@@ -1,67 +1,86 @@
+// ColaboradoresPage.tsx
 import { useState, useEffect } from "react";
-import { UserPlus, Search, Pencil, Trash2 } from "lucide-react";
+import { UserPlus, Search, Pencil, Trash2, Users, User, Building2 } from "lucide-react";
 import { CollaboratorFormModal } from "./FormularioColab";
-
+import { DeleteConfirmationModal } from "./DeleteColab";
 import type { Collaborator } from "../../../types/Colaboradores";
+import { getCollaborators, createCollaborator, updateCollaborator, deleteCollaborator } from "../../../services/apiColaboradores";
+
+const INITIAL_NEW_COLLAB: Collaborator = {
+  name: "",
+  email: "",
+  phone: "",
+  type: "Voluntário",
+  function: "",
+  date_joined: "",
+  observation: "",
+  status: "Ativo",
+};
 
 export function ColaboradoresPage() {
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
-  const [filtered, setFiltered] = useState<Collaborator[]>([]);
   const [search, setSearch] = useState("");
+  const [filterType, setFilterType] = useState("Todos os tipos");
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<"new" | "edit">("new");
   const [selectedCollaborator, setSelectedCollaborator] = useState<Collaborator | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  // Mock inicial
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  // ----- Fetch colaboradores do backend -----
   useEffect(() => {
-    const mockData: Collaborator[] = [
-      {
-        id: 1,
-        name: "Maria Souza",
-        email: "maria@email.com",
-        phone: "(11) 99999-9999",
-        type: "Voluntário",
-        function: "Coordenadora",
-        date_joined: "2023-06-14",
-        observation: "",
-        status: "Ativo",
-      },
-      {
-        id: 2,
-        name: "João Lima",
-        email: "joao@email.com",
-        phone: "(11) 88888-8888",
-        type: "Funcionário",
-        function: "Estoquista",
-        date_joined: "2022-03-09",
-        observation: "",
-        status: "Ativo",
-      },
-    ];
-    setCollaborators(mockData);
-    setFiltered(mockData);
+    fetchCollaborators();
   }, []);
 
-  useEffect(() => {
-    setFiltered(
-      collaborators.filter((c) =>
-        c.name.toLowerCase().includes(search.toLowerCase())
-      )
-    );
-  }, [search, collaborators]);
+  const fetchCollaborators = async () => {
+    try {
+      const data = await getCollaborators();
+      setCollaborators(
+        data.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          email: c.email,
+          phone: c.phone,
+          type: c.is_volunteer ? "Voluntário" : "Funcionário",
+          function: c.function,
+          date_joined: c.admission_date.split("T")[0],
+          observation: c.observation,
+          status: "Ativo",
+        }))
+      );
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao carregar colaboradores.");
+    }
+  };
 
+  // ----- Filtros e busca no front-end -----
+  const filteredCollaborators = collaborators.filter(c => {
+    const matchesSearch =
+      c.name.toLowerCase().includes(search.toLowerCase()) ||
+      c.email.toLowerCase().includes(search.toLowerCase());
+    const matchesType =
+      filterType === "Todos os tipos" ||
+      (filterType === "Voluntário" && c.type === "Voluntário") ||
+      (filterType === "Funcionário" && c.type === "Funcionário");
+    return matchesSearch && matchesType;
+  });
+
+  // ----- Paginação no front-end -----
+  const totalPages = Math.ceil(filteredCollaborators.length / itemsPerPage);
+  const paginatedCollaborators = filteredCollaborators.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const totalVoluntarios = filteredCollaborators.filter(c => c.type === "Voluntário").length;
+  const totalFuncionarios = filteredCollaborators.filter(c => c.type === "Funcionário").length;
+
+  // ----- Modais -----
   const openNewCollaborator = () => {
-    setSelectedCollaborator({
-      name: "",
-      email: "",
-      phone: "",
-      type: "Voluntário",
-      function: "",
-      date_joined: "",
-      observation: "",
-      status: "Ativo",
-    });
+    setSelectedCollaborator(INITIAL_NEW_COLLAB);
     setModalMode("new");
     setShowModal(true);
   };
@@ -72,60 +91,103 @@ export function ColaboradoresPage() {
     setShowModal(true);
   };
 
-  const handleSave = (collab: Collaborator, mode: "edit" | "new") => {
-    if (mode === "new") {
-      setCollaborators((prev) => [...prev, { ...collab, id: Date.now() }]);
-    } else {
-      setCollaborators((prev) =>
-        prev.map((c) => (c.id === collab.id ? collab : c))
-      );
+  const handleSave = async (collab: Collaborator, mode: "new" | "edit") => {
+    try {
+      if (mode === "new") await createCollaborator(collab);
+      else if (collab.id) await updateCollaborator(collab.id, collab);
+      setShowModal(false);
+      fetchCollaborators();
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao salvar colaborador.");
     }
-    setShowModal(false);
   };
 
-  const handleDelete = () => {
-    if (selectedCollaborator) {
-      setCollaborators((prev) =>
-        prev.filter((c) => c.id !== selectedCollaborator.id)
-      );
+  const handleDelete = async () => {
+    if (!selectedCollaborator?.id) return;
+    try {
+      await deleteCollaborator(selectedCollaborator.id);
+      setShowDeleteModal(false);
+      fetchCollaborators();
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao excluir colaborador.");
     }
-    setShowDeleteModal(false);
   };
 
   return (
     <div className="p-10 bg-gray-50 min-h-screen text-sm text-gray-700 relative">
+      {/* Cabeçalho */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-gray-800">Colaboradores</h1>
-          <p className="text-gray-500 text-sm mt-2">
-            Cadastro e acompanhamento dos colaboradores da ONG.
-          </p>
+          <p className="text-gray-500 text-sm mt-2">Cadastro e acompanhamento dos colaboradores da ONG.</p>
         </div>
-
         <button
           onClick={openNewCollaborator}
           className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded-lg shadow-md transition-colors"
         >
-          <UserPlus className="w-4 h-4" />
-          Novo Colaborador
+          <UserPlus className="w-4 h-4" /> Novo Colaborador
         </button>
       </div>
 
-      {/* Campo de busca */}
-      <div className="relative mb-6 max-w-md">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <input
-          type="text"
-          placeholder="Buscar colaborador..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
-        />
+      {/* Cards resumo */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+        <div className="bg-white rounded-xl p-6 shadow-sm flex items-center justify-between border border-gray-100">
+          <div>
+            <p className="text-xs text-gray-500">Total de Colaboradores</p>
+            <p className="text-3xl font-bold mt-1 text-gray-800">{filteredCollaborators.length}</p>
+          </div>
+          <div className="bg-orange-50 p-4 rounded-full">
+            <Users className="text-orange-500 w-7 h-7" />
+          </div>
+        </div>
+        <div className="bg-white rounded-xl p-6 shadow-sm flex items-center justify-between border border-gray-100">
+          <div>
+            <p className="text-xs text-gray-500">Voluntários</p>
+            <p className="text-3xl font-bold mt-1 text-gray-800">{totalVoluntarios}</p>
+          </div>
+          <div className="bg-blue-50 p-4 rounded-full">
+            <User className="text-blue-500 w-7 h-7" />
+          </div>
+        </div>
+        <div className="bg-white rounded-xl p-6 shadow-sm flex items-center justify-between border border-gray-100">
+          <div>
+            <p className="text-xs text-gray-500">Funcionários</p>
+            <p className="text-3xl font-bold mt-1 text-gray-800">{totalFuncionarios}</p>
+          </div>
+          <div className="bg-green-50 p-4 rounded-full">
+            <Building2 className="text-green-500 w-7 h-7" />
+          </div>
+        </div>
+      </div>
+
+      {/* Filtros e busca */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+        <div className="relative w-full sm:w-1/2">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Buscar por nome ou e-mail..."
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+          />
+        </div>
+        <select
+          value={filterType}
+          onChange={(e) => { setFilterType(e.target.value); setCurrentPage(1); }}
+          className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+        >
+          <option>Todos os tipos</option>
+          <option>Voluntário</option>
+          <option>Funcionário</option>
+        </select>
       </div>
 
       {/* Tabela */}
-      <div className="bg-white rounded-xl shadow-md overflow-hidden">
-        <table className="w-full text-left border-collapse text-sm">
+      <div className="bg-white rounded-xl shadow-md overflow-x-auto">
+        <table className="w-full text-left border-collapse text-sm min-w-[700px]">
           <thead className="bg-gray-100 text-gray-600 uppercase text-xs font-semibold">
             <tr>
               <th className="py-3 px-6">Nome</th>
@@ -137,58 +199,70 @@ export function ColaboradoresPage() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((collab) => (
+            {paginatedCollaborators.map(collab => (
               <tr key={collab.id} className="hover:bg-gray-50 transition">
                 <td className="py-3 px-6">{collab.name}</td>
                 <td className="py-3 px-6">{collab.type}</td>
                 <td className="py-3 px-6">{collab.function}</td>
-                <td className="py-3 px-6">
-                  <div className="flex flex-col">
-                    <span>{collab.email}</span>
-                    <span className="text-gray-500">{collab.phone}</span>
-                  </div>
+                <td className="py-3 px-6 flex flex-col">
+                  <span>{collab.email}</span>
+                  <span className="text-gray-500">{collab.phone}</span>
                 </td>
                 <td className="py-3 px-6">
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      collab.status === "Ativo"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-700"
-                    }`}
-                  >
-                    {collab.status}
-                  </span>
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    collab.status === "Ativo" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                  }`}>{collab.status}</span>
                 </td>
-                <td className="py-3 px-6 text-center">
-                  <div className="flex items-center justify-center gap-3">
-                    <button
-                      onClick={() => openEditCollaborator(collab)}
-                      className="p-2 text-blue-500 hover:text-blue-700 transition"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedCollaborator(collab);
-                        setShowDeleteModal(true);
-                      }}
-                      className="p-2 text-red-500 hover:text-red-700 transition"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+                <td className="py-3 px-6 text-center flex items-center justify-center gap-3">
+                  <button onClick={() => openEditCollaborator(collab)} className="p-2 text-blue-500 hover:text-blue-700 transition">
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => { setSelectedCollaborator(collab); setShowDeleteModal(true); }} className="p-2 text-red-500 hover:text-red-700 transition">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </td>
               </tr>
             ))}
-            {filtered.length === 0 && (
+            {paginatedCollaborators.length === 0 && (
               <tr>
-                <td colSpan={6} className="text-center py-6 text-gray-500">
-                  Nenhum colaborador encontrado.
-                </td>
+                <td colSpan={6} className="text-center py-6 text-gray-500">Nenhum colaborador encontrado.</td>
               </tr>
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Paginação Estilizada */}
+      <div className="flex justify-center mt-6 gap-2 items-center">
+        <button
+          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+          className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+        >
+          &laquo; Anterior
+        </button>
+
+        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+          <button
+            key={page}
+            onClick={() => setCurrentPage(page)}
+            className={`px-4 py-2 rounded-lg transition-colors ${
+              page === currentPage
+                ? "bg-orange-500 text-white font-semibold"
+                : "bg-gray-100 hover:bg-gray-200"
+            }`}
+          >
+            {page}
+          </button>
+        ))}
+
+        <button
+          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+          disabled={currentPage === totalPages || totalPages === 0}
+          className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+        >
+          Próximo &raquo;
+        </button>
       </div>
 
       {/* Modais */}
@@ -200,13 +274,11 @@ export function ColaboradoresPage() {
           onSave={handleSave}
         />
       )}
-
       {showDeleteModal && selectedCollaborator && (
         <DeleteConfirmationModal
-          title="Excluir Colaborador"
-          message={`Tem certeza que deseja excluir ${selectedCollaborator.name}?`}
+          donorName={selectedCollaborator.name}
           onConfirm={handleDelete}
-          onCancel={() => setShowDeleteModal(false)}
+          onClose={() => setShowDeleteModal(false)}
         />
       )}
     </div>
