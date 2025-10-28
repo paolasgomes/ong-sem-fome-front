@@ -1,6 +1,6 @@
 // DonorsPage.tsx
 import { useState, useEffect } from "react";
-import { User, Users, Building2, Mail, Phone, Trash2, Search } from "lucide-react";
+import { User, Users, Building2, Trash2, Search, Pencil, UserPlus } from "lucide-react";
 import { DonorFormModal, validateDonor } from "./FormularioDoador";
 import { DeleteConfirmationModal } from "./ConfirmDeletar";
 import { getDonors, createDonor, updateDonor, deleteDonor } from "../../../services/apiDonors";
@@ -27,116 +27,110 @@ const INITIAL_NEW_DONOR: Donor = {
 };
 
 export function DonorsPage() {
-  const [donorsData, setDonorsData] = useState<Pagination<Donor>>({
-    limit: 10,
-    page: 1,
-    totalPages: 1,
-    results: [],
-  });
-  const [loading, setLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [donors, setDonors] = useState<Donor[]>([]);
+  const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("Todos os tipos");
+  const [showModal, setShowModal] = useState(false);
+  const [modalMode, setModalMode] = useState<"new" | "edit">("new");
   const [selectedDonor, setSelectedDonor] = useState<Donor | null>(null);
-  const [showFormModal, setShowFormModal] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState<Donor | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+  // Paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  // Buscar doadores do backend
   useEffect(() => {
     fetchDonors();
   }, []);
 
   const fetchDonors = async () => {
-  try {
-    setLoading(true);
-    const data = await getDonors();
-
-    // Mapear snake_case do backend para camelCase do frontend
-    const mappedResults = data.results.map((d: any) => ({
-      ...d,
-      totalDonations: d.total_donations,
-      lastDonation: d.last_donation,
-    }));
-
-    setDonorsData({
-      ...data,
-      results: mappedResults,
-    });
-  } catch (error) {
-    console.error(error);
-    alert("Falha ao carregar doadores.");
-  } finally {
-    setLoading(false);
-  }
-};
-
-
- const handleSave = async (donor: Donor, mode: "new" | "edit") => {
-  const validationError = validateDonor(donor);
-  if (validationError) return alert(validationError);
-
-  const donorToSend: any = { ...donor };
-  if (donor.type === "pessoa_fisica") {
-    delete donorToSend.cnpj;
-    donorToSend.cpf = donor.cpf?.replace(/\D/g, '');
-  } else {
-    delete donorToSend.cpf;
-    donorToSend.cnpj = donor.cnpj?.replace(/\D/g, '');
-  }
-
-  donorToSend.totalDonations = donorToSend.totalDonations || 0;
-  donorToSend.lastDonation = donorToSend.lastDonation || "";
-
-  try {
-    if (mode === "edit" && donor.id) {
-      await updateDonor(donor.id, donorToSend);
-    } else {
-      await createDonor(donorToSend);
+    try {
+      const data: Pagination<Donor> = await getDonors({ page: 1, limit: 1000 }); // pega todos para filtrar no front
+      setDonors(data.results);
+    } catch (error) {
+      console.error(error);
+      alert("Falha ao carregar doadores.");
     }
-    setShowFormModal(false);
-    fetchDonors(); 
-  } catch (error: any) {
-    console.error(error);
-    alert(error.response?.data?.error || "Erro ao salvar o doador.");
-  }
-};
+  };
 
+  const handleSave = async (donor: Donor, mode: "new" | "edit") => {
+    const validationError = validateDonor(donor);
+    if (validationError) return alert(validationError);
+
+    const donorToSend: any = { ...donor };
+    if (donor.type === "pessoa_fisica") {
+      delete donorToSend.cnpj;
+      donorToSend.cpf = donor.cpf?.replace(/\D/g, "");
+    } else {
+      delete donorToSend.cpf;
+      donorToSend.cnpj = donor.cnpj?.replace(/\D/g, "");
+    }
+    donorToSend.totalDonations = donorToSend.totalDonations || 0;
+    donorToSend.lastDonation = donorToSend.lastDonation || "";
+
+    try {
+      if (mode === "edit" && donor.id) {
+        await updateDonor(donor.id, donorToSend);
+      } else {
+        await createDonor(donorToSend);
+      }
+      setShowModal(false);
+      fetchDonors();
+    } catch (error: any) {
+      console.error(error);
+      alert(error.response?.data?.error || "Erro ao salvar o doador.");
+    }
+  };
 
   const handleDelete = async () => {
-    if (!confirmDelete?.id) return;
+    if (!selectedDonor?.id) return;
     try {
-      await deleteDonor(confirmDelete.id);
-      setDonorsData((prev) => ({
-        ...prev,
-        results: prev.results.filter((d) => d.id !== confirmDelete.id),
-      }));
-      setConfirmDelete(null);
+      await deleteDonor(selectedDonor.id);
+      setSelectedDonor(null);
+      setShowDeleteModal(false);
+      fetchDonors();
     } catch (error) {
       console.error(error);
       alert("Erro ao excluir o doador.");
     }
   };
 
-  const handleOpenEdit = (donor: Donor) => {
+  const openNewDonor = () => {
+    setSelectedDonor(INITIAL_NEW_DONOR);
+    setModalMode("new");
+    setShowModal(true);
+  };
+
+  const openEditDonor = (donor: Donor) => {
     setSelectedDonor(donor);
-    setShowFormModal(true);
+    setModalMode("edit");
+    setShowModal(true);
   };
 
-  const handleOpenNew = () => {
-    setSelectedDonor(null);
-    setShowFormModal(true);
-  };
-
-  const totalPF = donorsData.results.filter((d) => d.type === "pessoa_fisica").length;
-  const totalPJ = donorsData.results.filter((d) => d.type === "pessoa_juridica").length;
-  const filteredDonors = donorsData.results.filter((donor) => {
-    const matchesSearch =
-      donor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      donor.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType =
+  // ====== FILTROS ======
+  const filteredDonors = donors.filter(donor => {
+    const typeMatch =
       filterType === "Todos os tipos" ||
       (filterType === "PF" && donor.type === "pessoa_fisica") ||
       (filterType === "PJ" && donor.type === "pessoa_juridica");
-    return matchesSearch && matchesType;
+
+    const searchMatch =
+      donor.name.toLowerCase().includes(search.toLowerCase()) ||
+      donor.email.toLowerCase().includes(search.toLowerCase());
+
+    return typeMatch && searchMatch;
   });
+
+  // Paginação no front-end
+  const totalPages = Math.ceil(filteredDonors.length / itemsPerPage);
+  const paginatedDonors = filteredDonors.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const totalPF = filteredDonors.filter(d => d.type === "pessoa_fisica").length;
+  const totalPJ = filteredDonors.filter(d => d.type === "pessoa_juridica").length;
 
   return (
     <div className="p-10 bg-gray-50 min-h-screen text-sm text-gray-700 relative">
@@ -147,26 +141,20 @@ export function DonorsPage() {
           <p className="text-gray-500 text-sm mt-2">Gestão de pessoas físicas e jurídicas</p>
         </div>
         <button
-          onClick={handleOpenNew}
-          className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium shadow-md transition-all flex items-center gap-2"
+          onClick={openNewDonor}
+          className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded-lg shadow-md transition-colors"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-            <path
-              fillRule="evenodd"
-              d="M12 3.75a.75.75 0 0 1 .75.75v6.75h6.75a.75.75 0 0 1 0 1.5h-6.75v6.75a.75.75 0 0 1-1.5 0v-6.75H4.5a.75.75 0 0 1 0-1.5h6.75V4.5a.75.75 0 0 1 .75-.75Z"
-              clipRule="evenodd"
-            />
-          </svg>{" "}
+          <UserPlus className="w-4 h-4" />
           Novo Doador
         </button>
       </div>
 
       {/* Cards resumo */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
         <div className="bg-white rounded-xl p-6 shadow-sm flex items-center justify-between border border-gray-100">
           <div>
             <p className="text-xs text-gray-500">Total de Doadores</p>
-            <p className="text-3xl font-bold mt-1 text-gray-800">{donorsData.results.length}</p>
+            <p className="text-3xl font-bold mt-1 text-gray-800">{filteredDonors.length}</p>
           </div>
           <div className="bg-orange-50 p-4 rounded-full">
             <Users className="text-orange-500 w-7 h-7" />
@@ -192,20 +180,22 @@ export function DonorsPage() {
         </div>
       </div>
 
-      {/* Busca e filtro */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+      {/* Filtros e busca */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
         <div className="relative w-full sm:w-1/2">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
             placeholder="Buscar por nome ou e-mail..."
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-12 pr-4 py-3 w-full border border-gray-200 rounded-md text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50"
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
           />
         </div>
         <select
-          onChange={(e) => setFilterType(e.target.value)}
-          className="border border-gray-200 rounded-md px-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50"
+          value={filterType}
+          onChange={(e) => { setFilterType(e.target.value); setCurrentPage(1); }}
+          className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
         >
           <option>Todos os tipos</option>
           <option>PF</option>
@@ -214,98 +204,101 @@ export function DonorsPage() {
       </div>
 
       {/* Tabela */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-x-auto">
-        {loading ? (
-          <div className="text-center py-10 text-gray-500">Carregando...</div>
-        ) : (
-          <table className="min-w-full text-sm">
-            <thead className="bg-gray-50 text-gray-600 border-b">
-              <tr>
-                <th className="text-left px-6 py-4 font-medium">Nome / Razão Social</th>
-                <th className="text-left px-6 py-4 font-medium">Tipo</th>
-                <th className="text-left px-6 py-4 font-medium">Contato</th>
-                <th className="text-left px-6 py-4 font-medium">Total Doações</th>
-                <th className="text-left px-6 py-4 font-medium">Última Doação</th>
-                <th className="text-left px-6 py-4 font-medium">Status</th>
-                <th className="text-left px-6 py-4 font-medium">Ações</th>
+      <div className="bg-white rounded-xl shadow-md overflow-x-auto">
+        <table className="w-full text-left border-collapse text-sm min-w-[800px]">
+          <thead className="bg-gray-100 text-gray-600 uppercase text-xs font-semibold">
+            <tr>
+              <th className="py-3 px-6">Nome / Razão Social</th>
+              <th className="py-3 px-6">Tipo</th>
+              <th className="py-3 px-6">Contato</th>
+              <th className="py-3 px-6">Total Doações</th>
+              <th className="py-3 px-6">Última Doação</th>
+              <th className="py-3 px-6">Status</th>
+              <th className="py-3 px-6 text-center">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {paginatedDonors.map((donor) => (
+              <tr key={donor.id} className="hover:bg-gray-50 transition">
+                <td className="py-3 px-6 flex items-center gap-2">
+                  {donor.type === "pessoa_fisica" ? <User className="w-4 h-4 text-gray-400" /> : <Building2 className="w-4 h-4 text-gray-400" />}
+                  {donor.name}
+                </td>
+                <td className="py-3 px-6">{donor.type === "pessoa_fisica" ? "PF" : "PJ"}</td>
+                <td className="py-3 px-6 flex flex-col">
+                  <span>{donor.email}</span>
+                  <span className="text-gray-500">{donor.phone}</span>
+                </td>
+                <td className="py-3 px-6 font-semibold text-orange-600">{donor.totalDonations}</td>
+                <td className="py-3 px-6 text-gray-500">{donor.lastDonation}</td>
+                <td className="py-3 px-6">
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${donor.status === "Ativo" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                    {donor.status}
+                  </span>
+                </td>
+                <td className="py-3 px-6 text-center flex items-center justify-center gap-3">
+                  <button onClick={() => openEditDonor(donor)} className="p-2 text-blue-500 hover:text-blue-700 transition">
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => { setSelectedDonor(donor); setShowDeleteModal(true); }} className="p-2 text-red-500 hover:text-red-700 transition">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {filteredDonors.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="text-center py-12 text-gray-500 text-base">
-                    Nenhum doador encontrado.
-                  </td>
-                </tr>
-              ) : (
-                filteredDonors.map((donor) => (
-                  <tr key={donor.id} className="border-b hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-5 flex items-center gap-3">
-                      {donor.type === "pessoa_fisica" ? (
-                        <User className="text-gray-400 w-4 h-4" />
-                      ) : (
-                        <Building2 className="text-gray-400 w-4 h-4" />
-                      )}
-                      {donor.name}
-                    </td>
-                    <td className="px-6 py-5">{donor.type === "pessoa_fisica" ? "PF" : "PJ"}</td>
-                    <td className="px-6 py-5 flex flex-col space-y-1">
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-gray-400" /> {donor.email}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4 text-gray-400" /> {donor.phone}
-                      </div>
-                    </td>
-                    <td className="px-6 py-5 font-semibold text-orange-600">{donor.totalDonations}</td>
-                    <td className="px-6 py-5 text-gray-500">{donor.lastDonation}</td>
-                    <td className="px-6 py-5">
-                      <span
-                        className={`px-2.5 py-1 text-xs font-medium rounded-full ${
-                          donor.status === "Ativo"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-red-100 text-red-700"
-                        }`}
-                      >
-                        {donor.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-5 flex gap-4">
-                      <button
-                        onClick={() => handleOpenEdit(donor)}
-                        className="text-orange-600 hover:text-orange-700 font-medium hover:underline"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => setConfirmDelete(donor)}
-                        className="text-red-600 hover:text-red-700 flex items-center gap-1 font-medium hover:underline"
-                      >
-                        <Trash2 className="w-4 h-4" /> Excluir
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        )}
+            ))}
+            {paginatedDonors.length === 0 && (
+              <tr>
+                <td colSpan={7} className="text-center py-6 text-gray-500">Nenhum doador encontrado.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Paginação */}
+      <div className="flex justify-center mt-6 gap-2 items-center">
+        <button
+          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+          className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+        >
+          &laquo; Anterior
+        </button>
+
+        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+          <button
+            key={page}
+            onClick={() => setCurrentPage(page)}
+            className={`px-4 py-2 rounded-lg transition-colors ${page === currentPage ? "bg-orange-500 text-white font-semibold" : "bg-gray-100 hover:bg-gray-200"}`}
+          >
+            {page}
+          </button>
+        ))}
+
+        <button
+          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+          disabled={currentPage === totalPages || totalPages === 0}
+          className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+        >
+          Próximo &raquo;
+        </button>
       </div>
 
       {/* Modais */}
-      {showFormModal && (
+      {showModal && selectedDonor && (
         <DonorFormModal
-          initialDonor={selectedDonor || INITIAL_NEW_DONOR}
-          mode={selectedDonor ? "edit" : "new"}
-          onClose={() => setShowFormModal(false)}
+          initialDonor={selectedDonor}
+          mode={modalMode}
+          onClose={() => setShowModal(false)}
           onSave={handleSave}
         />
       )}
-      {confirmDelete && (
+
+      {showDeleteModal && selectedDonor && (
         <DeleteConfirmationModal
-          donorName={confirmDelete.name}
-          onClose={() => setConfirmDelete(null)}
+          donorName={selectedDonor.name}
           onConfirm={handleDelete}
+          onClose={() => setShowDeleteModal(false)}
         />
       )}
     </div>

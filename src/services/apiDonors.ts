@@ -1,3 +1,4 @@
+// apiDonors.ts
 import type { Pagination, Donor } from "@/types/donors";
 import axios from "axios";
 
@@ -17,8 +18,15 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-export const getDonors = async (): Promise<Pagination<Donor>> => {
-  const response = await api.get<Pagination<Donor>>("/donors");
+interface GetDonorsParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  type?: 'pessoa_fisica' | 'pessoa_juridica';
+}
+
+export const getDonors = async (params?: GetDonorsParams): Promise<Pagination<Donor>> => {
+  const response = await api.get<Pagination<Donor>>("/donors", { params });
   return response.data ?? { limit: 0, page: 0, totalPages: 0, results: [] };
 };
 
