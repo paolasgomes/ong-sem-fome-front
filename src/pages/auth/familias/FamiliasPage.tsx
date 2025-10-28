@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Home, Users, UserRound, Trash2, Search, UserPen ,FileUser   } from "lucide-react";
+import { Home, Users, UserRound, Trash2, Search, Pencil ,FileUser   } from "lucide-react";
 import { FamilyFormModal, validateFamily } from "./FamiliasForm";
 import { getFamily, createFamily, updateFamily, deleteFamily } from "../../../services/apiFamily";
 import {DeleteFamilyConfirmationModal} from "../familias/DeleteFamilia"
@@ -144,60 +144,63 @@ export function FamiliasPage() {
             </div>
             <button
             onClick={handleOpenNew}
-            className="bg-orange-500 hover:bg-orange-600 cursor-pointer text-white px-6 py-2.5 rounded-lg text-sm font-medium shadow-md transition-all flex items-center gap-2"
+            className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 cursor-pointer text-white font-semibold px-4 py-2 rounded-lg shadow-md transition-colors"
             >
             <Home className="w-5 h-5" /> Nova Família
             </button>
         </div>
 
         {/* Cards de resumo */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
             <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all flex items-center justify-between border border-gray-100">
-            <div>
-                <p className="text-xs text-gray-500">Total de Famílias</p>
-                <p className="text-3xl font-bold mt-1 text-gray-800">{familyData.results.length}</p>
-            </div>
-            <div className="bg-orange-50 p-4 rounded-full">
-                <Home className="text-orange-500 w-7 h-7" />
-            </div>
+                <div>
+                    <p className="text-xs text-gray-500">Total de Famílias</p>
+                    <p className="text-3xl font-bold mt-1 text-gray-800">{familyData.results.length}</p>
+                </div>
+                <div className="bg-orange-50 p-4 rounded-full">
+                    <Home className="text-orange-500 w-7 h-7" />
+                </div>
             </div>
 
             <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all flex items-center justify-between border border-gray-100">
-            <div>
-                <p className="text-xs text-gray-500">Famílias Ativas</p>
-                <p className="text-3xl font-bold mt-1 text-gray-800">{totalAtivo}</p>
-            </div>
-            <div className="bg-green-50 p-4 rounded-full">
-                <UserRound className="text-green-600 w-7 h-7" />
-            </div>
+                <div>
+                    <p className="text-xs text-gray-500">Famílias Ativas</p>
+                    <p className="text-3xl font-bold mt-1 text-gray-800">{totalAtivo}</p>
+                </div>
+                <div className="bg-green-50 p-4 rounded-full">
+                    <UserRound className="text-green-600 w-7 h-7" />
+                </div>
             </div>
 
             <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all flex items-center justify-between border border-gray-100">
-            <div>
-                <p className="text-xs text-gray-500">Pessoas Atendidas</p>
-                <p className="text-3xl font-bold mt-1 text-gray-800">{totalPeople.toLocaleString("pt-BR")}</p>
-            </div>
-            <div className="bg-purple-50 p-4 rounded-full">
-                <Users className="text-purple-600 w-7 h-7" />
-            </div>
+                <div>
+                    <p className="text-xs text-gray-500">Pessoas Atendidas</p>
+                    <p className="text-3xl font-bold mt-1 text-gray-800">{totalPeople.toLocaleString("pt-BR")}</p>
+                </div>
+                <div className="bg-purple-50 p-4 rounded-full">
+                    <Users className="text-purple-600 w-7 h-7" />
+                </div>
             </div>
         </div>
 
         {/* Filtros */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+            {/* Campo de Busca */}
             <div className="relative w-full sm:w-1/2">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
                 type="text"
                 placeholder="Buscar por responsável, telefone ou email..."
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-12 pr-4 py-3 w-full border border-gray-200 rounded-md text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
                 />
             </div>
+
+            {/* Filtro de Status */}
             <select
                 onChange={(e) => setFilterType(e.target.value as "Todos" | "Ativa" | "Inativa")}
-                className="border border-gray-200 rounded-md px-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50"
-                >
+                className="border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 appearance-none bg-white"
+            >
                 <option value="Todos">Todos os status</option>
                 <option value="Ativa">Ativa</option>
                 <option value="Inativa">Inativa</option>
@@ -205,83 +208,82 @@ export function FamiliasPage() {
         </div>
 
         {/* Tabela */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-x-auto">
-            <table className="min-w-full text-sm">
-            <thead className="bg-gray-50 text-gray-600 border-b">
+        <div className="bg-white rounded-xl shadow-md overflow-hidden">
+            <table className="w-full text-left border-collapse text-sm">
+                <thead className="bg-gray-100 text-gray-600 uppercase text-xs font-semibold">
                 <tr>
-                <th className="text-left px-6 py-4 font-medium">Responsável</th>
-                <th className="text-left px-6 py-4 font-medium">Membros</th>
-                <th className="text-left px-6 py-4 font-medium">Endereço</th>
-                <th className="text-left px-6 py-4 font-medium">Telefone</th>
-                <th className="text-left px-6 py-4 font-medium">Renda Familiar</th>
-                <th className="text-left px-6 py-4 font-medium">Status</th>
-                <th className="text-left px-6 py-4 font-medium">Ações</th>
+                    <th className="py-3 px-6">Responsável</th>
+                    <th className="py-3 px-6">Membros</th>
+                    <th className="py-3 px-6">Endereço</th>
+                    <th className="py-3 px-6">Telefone</th>
+                    <th className="py-3 px-6">Renda Familiar</th>
+                    <th className="py-3 px-6">Status</th>
+                    <th className="py-3 px-6 text-center">Ações</th>
                 </tr>
-            </thead>
-            <tbody>
-
-                {/* NOVO TRECHO PARA LOADING NA TABELA */}
+                </thead>
+                <tbody>
+                {/* LOADING */}
                 {loading && filteredFamilies.length === 0 && (
                     <tr>
-                        <td colSpan={7} className="text-center py-12 text-orange-500 font-medium">
-                            Carregando famílias...
+                    <td colSpan={7} className="text-center py-6 text-orange-500 font-medium">
+                        Carregando famílias...
+                    </td>
+                    </tr>
+                )}
+
+                {/* SEM RESULTADO */}
+                {filteredFamilies.length === 0 ? (
+                    <tr>
+                    <td colSpan={7} className="text-center py-6 text-gray-500">
+                        Nenhuma família encontrada.
+                    </td>
+                    </tr>
+                ) : (
+                    filteredFamilies.map((f) => (
+                    <tr key={f.id} className="hover:bg-gray-50 transition">
+                        <td className="py-3 px-6 font-medium text-gray-800">{f.responsible_name}</td>
+                        <td className="py-3 px-6">{f.members_count}</td>
+                        <td className="py-3 px-6">{f.address}</td>
+                        <td className="py-3 px-6">{f.phone}</td>
+                        <td className="py-3 px-6">{f.income_bracket}</td>
+                        <td className="py-3 px-6">
+                        <span
+                            className={`px-3 py-1 rounded-full text-xs font-semibold  ${
+                            f.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                            }`}
+                        >
+                            {f.is_active ? "Ativa" : "Inativa"}
+                        </span>
+                        </td>
+                        <td className="py-3 px-6 text-center">
+                        <div className="flex items-center justify-center gap-3">
+                            <button
+                            onClick={() => handleOpenEdit(f)}
+                            className="p-2 text-blue-500 hover:text-blue-700 cursor-pointer transition"
+                            >
+                            <Pencil className="w-4 h-4" />
+                            </button>
+                            <button
+                            onClick={() => setConfirmDelete(f)}
+                            className="p-2 text-red-500 hover:text-red-700 cursor-pointer transition"
+                            >
+                            <Trash2 className="w-4 h-4" />
+                            </button>
+                            <button
+                            onClick={() => setViewFamily(f)}
+                            className="p-2 text-orange-600 hover:text-orange-700 cursor-pointer transition"
+                            >
+                            <FileUser className="w-4 h-4" />
+                            </button>
+                        </div>
                         </td>
                     </tr>
+                    ))
                 )}
-
-                {filteredFamilies.length === 0 ? (
-                <tr>
-                    <td colSpan={7} className="text-center py-12 text-gray-500 text-base">
-                    Nenhuma família encontrada.
-                    </td>
-                </tr>
-                ) : (
-                filteredFamilies.map((f) => (
-                    <tr key={f.id} className="border-b hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-5 font-medium text-gray-800">{f.responsible_name}</td>
-                    <td className="px-6 py-5">{f.members_count}</td>
-                    <td className="px-6 py-5">{f.address}</td>
-                    <td className="px-6 py-5">{f.phone}</td>
-                    <td className="px-6 py-5">{f.income_bracket}</td>
-                    <td className="px-6 py-5">
-                        <span
-                        className={`px-2.5 py-1 text-xs font-medium rounded-full ${
-                            f.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                        }`}
-                        >
-                        {f.is_active ? "Ativa" : "Inativa"}
-                        </span>
-                    </td>
-                    <td className="px-6 py-5">
-                        <div className="flex flex-col gap-2">
-                        <button
-                        onClick={() => handleOpenEdit(f)}
-                        className="text-orange-600 hover:text-orange-700 flex items-center gap-1 font-medium hover:cursor-pointer"
-                        >
-                        <UserPen className="w-4 h-4" /> Editar
-                        </button>
-
-                        <button
-                        onClick={() => setConfirmDelete(f)}
-                        className="text-red-600 hover:text-red-700 flex items-center gap-1 font-medium hover:cursor-pointer"
-                        >
-                        <Trash2 className="w-4 h-4" /> Excluir
-                        </button>
-
-                        <button
-                        onClick={() => setViewFamily(f)}
-                        className="text-blue-600 hover:text-blue-700 flex items-center gap-1 font-medium hover:cursor-pointer"
-                        >
-                        <FileUser className="w-4 h-4" /> Ver perfil
-                        </button>
-                        </div>
-                    </td>
-                    </tr>
-                ))
-                )}
-            </tbody>
+                </tbody>
             </table>
-        </div>
+            </div>
+
 
         {showFormModal && (
             <FamilyFormModal
