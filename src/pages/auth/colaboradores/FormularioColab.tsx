@@ -1,3 +1,4 @@
+// // FormularioColab.tsx
 import { useState, useEffect } from "react";
 import { X, User, Mail, Phone, Briefcase } from "lucide-react";
 import type { Collaborator } from "../../../types/Colaboradores";
@@ -9,7 +10,7 @@ interface CollaboratorFormModalProps {
   onSave: (collaborator: Collaborator, mode: "edit" | "new") => void;
 }
 
-// ----- Função de validação -----
+// validação pública (exportada) — padronizada como em Donors
 export const validateCollaborator = (collab: Collaborator): string | null => {
   if (
     !collab.name ||
@@ -34,29 +35,26 @@ export const validateCollaborator = (collab: Collaborator): string | null => {
   return null;
 };
 
-// ----- Funções de máscara -----
-const formatPhone = (value: string) => {
-  const v = value.replace(/\D/g, "").slice(0, 11);
-  if (v.length <= 10)
-    return v.replace(/(\d{2})(\d{4})(\d{0,4})/, "($1) $2-$3").replace(/-$/, "");
-  return v.replace(/(\d{2})(\d{5})(\d{0,4})/, "($1) $2-$3").replace(/-$/, "");
-};
-
-// ----- Componente principal -----
 export function CollaboratorFormModal({
   initialCollaborator,
   mode,
   onClose,
   onSave,
 }: CollaboratorFormModalProps) {
-  const [collabData, setCollabData] = useState<Collaborator>({
-    ...initialCollaborator,
-  });
+  const [collabData, setCollabData] = useState<Collaborator>({ ...initialCollaborator });
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setCollabData(initialCollaborator);
   }, [initialCollaborator]);
+
+  // mascara telefone (mesma do donors)
+  const formatPhone = (value: string) => {
+    const v = value.replace(/\D/g, "").slice(0, 11);
+    if (v.length <= 10)
+      return v.replace(/(\d{2})(\d{4})(\d{0,4})/, "($1) $2-$3").replace(/-$/, "");
+    return v.replace(/(\d{2})(\d{5})(\d{0,4})/, "($1) $2-$3").replace(/-$/, "");
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>

@@ -1,13 +1,14 @@
 // ColaboradoresPage.tsx
 import { useState, useEffect } from "react";
 import { UserPlus, Search, Pencil, Trash2, Users, User, Building2 } from "lucide-react";
-import { CollaboratorFormModal } from "./FormularioColab";
+import { CollaboratorFormModal, validateCollaborator } from "./FormularioColab";
 import { DeleteConfirmationModal } from "./DeleteColab";
 import type { Collaborator } from "../../../types/Colaboradores";
 import { getCollaborators, createCollaborator, updateCollaborator, deleteCollaborator } from "../../../services/apiColaboradores";
 
 const INITIAL_NEW_COLLAB: Collaborator = {
   name: "",
+  registration: Date.now().toString(),
   email: "",
   phone: "",
   type: "Voluntário",
@@ -26,28 +27,36 @@ export function ColaboradoresPage() {
   const [selectedCollaborator, setSelectedCollaborator] = useState<Collaborator | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+  // Paginação
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // ----- Fetch colaboradores do backend -----
   useEffect(() => {
     fetchCollaborators();
   }, []);
 
   const fetchCollaborators = async () => {
     try {
-      const data = await getCollaborators();
+      // busca um número grande para o front (poderíamos paginar no backend depois)
+      const response = await getCollaborators(1, 1000);
+      const data = response.results ?? [];
+
+      // usa diretamente os dados do backend, normalizando para o tipo local
       setCollaborators(
         data.map((c: any) => ({
           id: c.id,
           name: c.name,
+          registration: c.registration ?? String(c.id ?? Date.now()),
           email: c.email,
           phone: c.phone,
-          type: c.is_volunteer ? "Voluntário" : "Funcionário",
-          function: c.function,
-          date_joined: c.admission_date.split("T")[0],
-          observation: c.observation,
-          status: "Ativo",
+          type:
+            String(c.is_volunteer) === "1" || c.is_volunteer === true
+              ? "Voluntário"
+              : "Funcionário",
+          function: c.function ?? "",
+          observation: c.observation ?? "",
+          status: c.status ?? "Ativo",
+          date_joined: c.admission_date ? c.admission_date.split("T")[0] : "",
         }))
       );
     } catch (error) {
@@ -56,7 +65,7 @@ export function ColaboradoresPage() {
     }
   };
 
-  // ----- Filtros e busca no front-end -----
+  // filtros
   const filteredCollaborators = collaborators.filter(c => {
     const matchesSearch =
       c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -68,7 +77,7 @@ export function ColaboradoresPage() {
     return matchesSearch && matchesType;
   });
 
-  // ----- Paginação no front-end -----
+  // paginação no front
   const totalPages = Math.ceil(filteredCollaborators.length / itemsPerPage);
   const paginatedCollaborators = filteredCollaborators.slice(
     (currentPage - 1) * itemsPerPage,
@@ -78,7 +87,7 @@ export function ColaboradoresPage() {
   const totalVoluntarios = filteredCollaborators.filter(c => c.type === "Voluntário").length;
   const totalFuncionarios = filteredCollaborators.filter(c => c.type === "Funcionário").length;
 
-  // ----- Modais -----
+  // modais
   const openNewCollaborator = () => {
     setSelectedCollaborator(INITIAL_NEW_COLLAB);
     setModalMode("new");
@@ -86,20 +95,46 @@ export function ColaboradoresPage() {
   };
 
   const openEditCollaborator = (collab: Collaborator) => {
-    setSelectedCollaborator(collab);
+    setSelectedCollaborator({
+      ...collab,
+      registration: collab.registration || collab.id?.toString() || Date.now().toString(),
+    });
     setModalMode("edit");
     setShowModal(true);
   };
 
   const handleSave = async (collab: Collaborator, mode: "new" | "edit") => {
+    // validação no front (mesmo padrão dos doadores)
+    const validationError = validateCollaborator(collab);
+    if (validationError) return alert(validationError);
+
+    // prepara payload a ser enviado (remover campos desnecessários)
+    const collabToSend: any = {
+      name: collab.name,
+      registration: String(collab.registration),
+      email: collab.email,
+      phone: collab.phone.replace(/\D/g, ""),
+      admission_date: collab.date_joined ? new Date(collab.date_joined).toISOString() : null,
+      dismissal_date: null,
+      is_volunteer: collab.type === "Voluntário",
+      function: collab.function || null,
+      observation: collab.observation || null,
+      status: collab.status || "Ativo",
+      sector_id: null,
+      user_id: null,
+    };
+
     try {
-      if (mode === "new") await createCollaborator(collab);
-      else if (collab.id) await updateCollaborator(collab.id, collab);
+      if (mode === "edit" && collab.id) {
+        await updateCollaborator(collab.id, collabToSend);
+      } else {
+        await createCollaborator(collabToSend);
+      }
       setShowModal(false);
       fetchCollaborators();
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert("Erro ao salvar colaborador.");
+      alert(error?.response?.data?.error || "Erro ao salvar colaborador.");
     }
   };
 
@@ -107,6 +142,7 @@ export function ColaboradoresPage() {
     if (!selectedCollaborator?.id) return;
     try {
       await deleteCollaborator(selectedCollaborator.id);
+      setSelectedCollaborator(null);
       setShowDeleteModal(false);
       fetchCollaborators();
     } catch (error) {
@@ -232,7 +268,7 @@ export function ColaboradoresPage() {
         </table>
       </div>
 
-      {/* Paginação Estilizada */}
+      {/* Paginação (com dots parecido com donors) */}
       <div className="flex justify-center mt-6 gap-2 items-center">
         <button
           onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
@@ -242,19 +278,32 @@ export function ColaboradoresPage() {
           &laquo; Anterior
         </button>
 
-        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-          <button
-            key={page}
-            onClick={() => setCurrentPage(page)}
-            className={`px-4 py-2 rounded-lg transition-colors ${
-              page === currentPage
-                ? "bg-orange-500 text-white font-semibold"
-                : "bg-gray-100 hover:bg-gray-200"
-            }`}
-          >
-            {page}
-          </button>
-        ))}
+        {Array.from({ length: totalPages }, (_, i) => i + 1)
+          .filter(page =>
+            page === 1 ||
+            page === totalPages ||
+            (page >= currentPage - 1 && page <= currentPage + 1)
+          )
+          .map((page, idx, arr) => {
+            const prev = arr[idx - 1];
+            const showDots = prev && page - prev > 1;
+            return (
+              <span key={page} className="flex items-center">
+                {showDots && <span className="px-2">...</span>}
+                <button
+                  onClick={() => setCurrentPage(page)}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    page === currentPage
+                      ? "bg-orange-500 text-white font-semibold"
+                      : "bg-gray-100 hover:bg-gray-200"
+                  }`}
+                >
+                  {page}
+                </button>
+              </span>
+            );
+          })
+        }
 
         <button
           onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
