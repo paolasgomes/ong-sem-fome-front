@@ -27,7 +27,7 @@ const INITIAL_NEW_FAMILY: Family = {
 
 export function FamiliasPage() {
     const [familyData, setFamilyData] = useState<Pagination<Family>>({
-        limit: 10,
+        limit: 50,
         page: 1,
         totalPages: 1,
         results: [],
@@ -40,6 +40,10 @@ export function FamiliasPage() {
     const [showFormModal, setShowFormModal] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState<Family | null>(null);
     const [viewFamily, setViewFamily] = useState<Family | null>(null);
+
+      // Paginação
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5;
 
     // ======= Carregar famílias =======
     useEffect(() => {
@@ -120,19 +124,25 @@ export function FamiliasPage() {
     const totalAtivo = familyData.results.filter((f) => f.is_active).length;
     const totalPeople = familyData.results.reduce((acc, f) => acc + (f.members_count || 0), 0);
 
+    // ======= Filtros e paginação =======
     const filteredFamilies = familyData.results.filter((family) => {
         const matchesSearch =
-        family.responsible_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        family.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        family.phone.toLowerCase().includes(searchTerm.toLowerCase());
+            family.responsible_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            family.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            family.phone.toLowerCase().includes(searchTerm.toLowerCase());
 
         const matchesType =
-        filterType === "Todos" ||
-        (filterType === "Ativa" && family.is_active) ||
-        (filterType === "Inativa" && !family.is_active);
+            filterType === "Todos" ||
+            (filterType === "Ativa" && family.is_active) ||
+            (filterType === "Inativa" && !family.is_active);
 
         return matchesSearch && matchesType;
     });
+
+    const totalPages = Math.ceil(filteredFamilies.length / itemsPerPage);
+    const paginatedFamilies = filteredFamilies.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage)
 
     return (
         <div className="p-10 bg-gray-50 min-h-screen text-sm text-gray-700 relative">
@@ -191,14 +201,14 @@ export function FamiliasPage() {
                 <input
                 type="text"
                 placeholder="Buscar por responsável, telefone ou email..."
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
                 />
             </div>
 
             {/* Filtro de Status */}
             <select
-                onChange={(e) => setFilterType(e.target.value as "Todos" | "Ativa" | "Inativa")}
+                onChange={(e) => {setFilterType(e.target.value as "Todos" | "Ativa" | "Inativa"); setCurrentPage(1)}}
                 className="border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 appearance-none bg-white"
             >
                 <option value="Todos">Todos os status</option>
@@ -239,7 +249,7 @@ export function FamiliasPage() {
                     </td>
                     </tr>
                 ) : (
-                    filteredFamilies.map((f) => (
+                    paginatedFamilies.map((f) => (
                     <tr key={f.id} className="hover:bg-gray-50 transition">
                         <td className="py-3 px-6 font-medium text-gray-800">{f.responsible_name}</td>
                         <td className="py-3 px-6">{f.members_count}</td>
@@ -283,6 +293,51 @@ export function FamiliasPage() {
                 </tbody>
             </table>
             </div>
+
+            {/* Paginação dinâmica */}
+        <div className="flex justify-center mt-6 gap-2 items-center">
+        <button
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+        >
+            &laquo; Anterior
+        </button>
+
+        {Array.from({ length: totalPages }, (_, i) => i + 1)
+            .filter(page =>
+            page === 1 ||
+            page === totalPages ||
+            (page >= currentPage - 1 && page <= currentPage + 1)
+            )
+            .map((page, idx, arr) => {
+            const prev = arr[idx - 1];
+            const showDots = prev && page - prev > 1;
+            return (
+                <span key={page} className="flex items-center">
+                {showDots && <span className="px-2">...</span>}
+                <button
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-4 py-2 rounded-lg transition-colors ${
+                    page === currentPage
+                        ? "bg-orange-500 text-white font-semibold"
+                        : "bg-gray-100 hover:bg-gray-200"
+                    }`}
+                >
+                    {page}
+                </button>
+                </span>
+            );
+            })}
+
+        <button
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages || totalPages === 0}
+            className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+        >
+            Próximo &raquo;
+        </button>
+        </div>
 
 
         {showFormModal && (
