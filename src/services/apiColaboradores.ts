@@ -20,40 +20,59 @@ api.interceptors.request.use((config) => {
 });
 
 // ----- GET: todos os colaboradores -----
-export const getCollaborators = async (): Promise<Collaborator[]> => {
-  const response = await api.get("/collaborators");
+export const getCollaborators = async (page = 1, limit = 100) => {
+  const response = await api.get(`/collaborators?page=${page}&limit=${limit}`);
   return response.data;
 };
 
 // ----- POST: criar colaborador -----
-export const createCollaborator = async (collab: Collaborator): Promise<Collaborator> => {
+export const createCollaborator = async (collab: any) => {
   const payload = {
-    ...collab,
-    registration: collab.id?.toString() || Date.now().toString(),
-    admission_date: collab.date_joined,
-    is_volunteer: collab.type === "Voluntário",
-    sector_id: 1,
-    user_id: 1,
+    name: collab.name,
+    email: collab.email,
+    phone: collab.phone, // já formatado no front, mas backend pode limpar
+    registration: collab.registration ?? Date.now().toString(),
+    admission_date: collab.admission_date ?? null,
+    dismissal_date: collab.dismissal_date ?? null,
+    is_volunteer: collab.is_volunteer ?? false,
+    sector_id: collab.sector_id ?? null,
+    user_id: collab.user_id ?? null,
+    function: collab.function ?? null,
+    observation: collab.observation ?? null,
+    status: collab.status ?? "Ativo",
   };
   const response = await api.post("/collaborators", payload);
   return response.data;
 };
 
-// ----- PUT: atualizar colaborador -----
-export const updateCollaborator = async (id: number, collab: Collaborator): Promise<Collaborator> => {
+export const updateCollaborator = async (id: number, collab: any) => {
   const payload = {
-    ...collab,
-    registration: collab.id?.toString() || id.toString(),
-    admission_date: collab.date_joined,
-    is_volunteer: collab.type === "Voluntário",
-    sector_id: 1,
-    user_id: 1,
+    name: collab.name,
+    registration: String(collab.registration),
+    email: collab.email,
+    phone: collab.phone,
+    admission_date: collab.admission_date ?? null,
+    dismissal_date: collab.dismissal_date ?? null,
+    is_volunteer: collab.is_volunteer ?? false,
+    sector_id: collab.sector_id ?? null,
+    user_id: collab.user_id ?? null,
+    function: collab.function ?? null,
+    observation: collab.observation ?? null,
+    status: collab.status ?? "Ativo",
   };
+
+  console.log("Payload enviado para PUT:", payload);
+
   const response = await api.put(`/collaborators/${id}`, payload);
   return response.data;
 };
 
+
+
+
+
+
 // ----- DELETE: remover colaborador -----
-export const deleteCollaborator = async (id: number): Promise<void> => {
+export const deleteCollaborator = async (id: number) => {
   await api.delete(`/collaborators/${id}`);
 };

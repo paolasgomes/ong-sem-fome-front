@@ -46,42 +46,47 @@ export function DonorsPage() {
 
   const fetchDonors = async () => {
     try {
-      const data: Pagination<Donor> = await getDonors({ page: 1, limit: 1000 }); // pega todos para filtrar no front
-      setDonors(data.results);
+      const data: Pagination<Donor> = await getDonors({ page: 1, limit: 1000 });
+      setDonors(data.results); // usa apenas os dados reais do backend
     } catch (error) {
       console.error(error);
       alert("Falha ao carregar doadores.");
     }
   };
 
-  const handleSave = async (donor: Donor, mode: "new" | "edit") => {
-    const validationError = validateDonor(donor);
-    if (validationError) return alert(validationError);
+ const handleSave = async (donor: Donor, mode: "new" | "edit") => {
+  const validationError = validateDonor(donor);
+  if (validationError) return alert(validationError);
 
-    const donorToSend: any = { ...donor };
-    if (donor.type === "pessoa_fisica") {
-      delete donorToSend.cnpj;
-      donorToSend.cpf = donor.cpf?.replace(/\D/g, "");
+  const donorToSend: any = { ...donor };
+
+  if (donor.type === "pessoa_fisica") {
+    delete donorToSend.cnpj;
+    donorToSend.cpf = donor.cpf?.replace(/\D/g, "");
+  } else {
+    delete donorToSend.cpf;
+    donorToSend.cnpj = donor.cnpj?.replace(/\D/g, "");
+  }
+
+  // Remover apenas campos que NÃO precisam ser enviados
+  delete donorToSend.totalDonations;
+  delete donorToSend.lastDonation;
+  // delete donorToSend.status;  <- removido para manter o status
+
+  try {
+    if (mode === "edit" && donor.id) {
+      await updateDonor(donor.id, donorToSend);
     } else {
-      delete donorToSend.cpf;
-      donorToSend.cnpj = donor.cnpj?.replace(/\D/g, "");
+      await createDonor(donorToSend);
     }
-    donorToSend.totalDonations = donorToSend.totalDonations || 0;
-    donorToSend.lastDonation = donorToSend.lastDonation || "";
+    setShowModal(false);
+    fetchDonors(); // Recarrega do backend já com o status correto
+  } catch (error: any) {
+    console.error(error);
+    alert(error.response?.data?.error || "Erro ao salvar o doador.");
+  }
+};
 
-    try {
-      if (mode === "edit" && donor.id) {
-        await updateDonor(donor.id, donorToSend);
-      } else {
-        await createDonor(donorToSend);
-      }
-      setShowModal(false);
-      fetchDonors();
-    } catch (error: any) {
-      console.error(error);
-      alert(error.response?.data?.error || "Erro ao salvar o doador.");
-    }
-  };
 
   const handleDelete = async () => {
     if (!selectedDonor?.id) return;
@@ -229,11 +234,11 @@ export function DonorsPage() {
                   <span>{donor.email}</span>
                   <span className="text-gray-500">{donor.phone}</span>
                 </td>
-                <td className="py-3 px-6 font-semibold text-orange-600">{donor.totalDonations}</td>
-                <td className="py-3 px-6 text-gray-500">{donor.lastDonation}</td>
+                <td className="py-3 px-6 font-semibold text-orange-600">{donor.totalDonations ?? ""}</td>
+                <td className="py-3 px-6 text-gray-500">{donor.lastDonation ?? ""}</td>
                 <td className="py-3 px-6">
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold ${donor.status === "Ativo" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
-                    {donor.status}
+                    {donor.status ?? ""}
                   </span>
                 </td>
                 <td className="py-3 px-6 text-center flex items-center justify-center gap-3">
@@ -255,34 +260,51 @@ export function DonorsPage() {
         </table>
       </div>
 
-      {/* Paginação */}
-      <div className="flex justify-center mt-6 gap-2 items-center">
-        <button
-          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-          disabled={currentPage === 1}
-          className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-        >
-          &laquo; Anterior
-        </button>
+      {/* Paginação dinâmica */}
+<div className="flex justify-center mt-6 gap-2 items-center">
+  <button
+    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+    disabled={currentPage === 1}
+    className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+  >
+    &laquo; Anterior
+  </button>
 
-        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+  {Array.from({ length: totalPages }, (_, i) => i + 1)
+    .filter(page =>
+      page === 1 || 
+      page === totalPages || 
+      (page >= currentPage - 1 && page <= currentPage + 1)
+    )
+    .map((page, idx, arr) => {
+      const prev = arr[idx - 1];
+      const showDots = prev && page - prev > 1;
+      return (
+        <span key={page} className="flex items-center">
+          {showDots && <span className="px-2">...</span>}
           <button
-            key={page}
             onClick={() => setCurrentPage(page)}
-            className={`px-4 py-2 rounded-lg transition-colors ${page === currentPage ? "bg-orange-500 text-white font-semibold" : "bg-gray-100 hover:bg-gray-200"}`}
+            className={`px-4 py-2 rounded-lg transition-colors ${
+              page === currentPage
+                ? "bg-orange-500 text-white font-semibold"
+                : "bg-gray-100 hover:bg-gray-200"
+            }`}
           >
             {page}
           </button>
-        ))}
+        </span>
+      );
+    })}
 
-        <button
-          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-          disabled={currentPage === totalPages || totalPages === 0}
-          className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-        >
-          Próximo &raquo;
-        </button>
-      </div>
+  <button
+    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+    disabled={currentPage === totalPages || totalPages === 0}
+    className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+  >
+    Próximo &raquo;
+  </button>
+</div>
+
 
       {/* Modais */}
       {showModal && selectedDonor && (
