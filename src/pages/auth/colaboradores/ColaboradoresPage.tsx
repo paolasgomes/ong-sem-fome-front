@@ -58,7 +58,6 @@ export function ColaboradoresPage() {
       alert("Erro ao carregar colaboradores.");
     }
   };
-
   // Filtros
   const filteredCollaborators = collaborators.filter(c => {
     const matchesSearch =
@@ -77,7 +76,6 @@ export function ColaboradoresPage() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-
   const totalVoluntarios = filteredCollaborators.filter(c => c.type === "Voluntário").length;
   const totalFuncionarios = filteredCollaborators.filter(c => c.type === "Funcionário").length;
 
@@ -116,7 +114,6 @@ export function ColaboradoresPage() {
   sector_id: null,
   user_id: null,
 };
-
 
     try {
       if (mode === "edit" && collab.id) {
