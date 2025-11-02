@@ -1,16 +1,18 @@
-import type { ReactNode } from "react";
+import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
+import {useState} from "react"
 
-interface LayoutProps {
-  children: ReactNode;
-  activeMenuItem?: string;
-}
+export function Layout() {
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
-export function Layout({ children, activeMenuItem }: LayoutProps) {
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar activeItem={activeMenuItem} />
-      <main className="flex-1">{children}</main>
+    <div className="h-screen w-screen overflow-hidden bg-gray-50">
+      <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+      <main className={`h-full overflow-y-auto transition-all duration-300 ${isCollapsed ? "ml-20" : "ml-64"}`}>
+        <div className="p-2">
+          <Outlet />
+        </div>
+      </main>
     </div>
   );
 }
