@@ -47,7 +47,7 @@ export function CollaboratorFormModal({
     setCollabData(initialCollaborator);
   }, [initialCollaborator]);
 
-  // mascara telefone (mesma do donors)
+  // mascara telefone 
   const formatPhone = (value: string) => {
     const v = value.replace(/\D/g, "").slice(0, 11);
     if (v.length <= 10)

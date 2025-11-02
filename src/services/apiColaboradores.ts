@@ -64,11 +64,9 @@ export const updateCollaborator = async (id: number, collab: any) => {
   };
 
   console.log("Payload enviado para PUT:", payload);
-
   const response = await api.put(`/collaborators/${id}`, payload);
   return response.data;
 };
-
 // DELETE: remover colaborador
 export const deleteCollaborator = async (id: number) => {
   await api.delete(`/collaborators/${id}`);
