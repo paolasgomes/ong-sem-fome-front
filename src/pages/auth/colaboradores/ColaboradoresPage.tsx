@@ -1,4 +1,3 @@
-// ColaboradoresPage.tsx
 import { useState, useEffect } from "react";
 import { UserPlus, Search, Pencil, Trash2, Users, User, Building2 } from "lucide-react";
 import { CollaboratorFormModal, validateCollaborator } from "./FormularioColab";
@@ -37,33 +36,30 @@ export function ColaboradoresPage() {
 
   const fetchCollaborators = async () => {
     try {
-      // busca um número grande para o front (poderíamos paginar no backend depois)
       const response = await getCollaborators(1, 1000);
       const data = response.results ?? [];
 
-      // usa diretamente os dados do backend, normalizando para o tipo local
       setCollaborators(
-  data.map((c: any) => ({
-    id: c.id,
-    name: c.name,
-    registration: c.registration ?? String(c.id ?? Date.now()),
-    email: c.email,
-    phone: c.phone,
-    type: c.is_volunteer ? "Voluntário" : "Funcionário",
-    function: c.function ?? "",
-    observation: c.observation ?? "",
-    status: c.is_active ? "Ativo" : "Inativo", // usar is_active do backend
-    date_joined: c.admission_date ? c.admission_date.split("T")[0] : "",
-  }))
-);
-
+        data.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          registration: c.registration ?? String(c.id ?? Date.now()),
+          email: c.email,
+          phone: c.phone,
+          type: c.is_volunteer ? "Voluntário" : "Funcionário",
+          function: c.function ?? "",
+          observation: c.observation ?? "",
+          status: c.is_active ? "Ativo" : "Inativo",
+          date_joined: c.admission_date ? c.admission_date.split("T")[0] : "",
+        }))
+      );
     } catch (error) {
       console.error(error);
       alert("Erro ao carregar colaboradores.");
     }
   };
 
-  // filtros
+  // Filtros
   const filteredCollaborators = collaborators.filter(c => {
     const matchesSearch =
       c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -75,7 +71,7 @@ export function ColaboradoresPage() {
     return matchesSearch && matchesType;
   });
 
-  // paginação no front
+  // Paginação no front
   const totalPages = Math.ceil(filteredCollaborators.length / itemsPerPage);
   const paginatedCollaborators = filteredCollaborators.slice(
     (currentPage - 1) * itemsPerPage,
@@ -85,31 +81,27 @@ export function ColaboradoresPage() {
   const totalVoluntarios = filteredCollaborators.filter(c => c.type === "Voluntário").length;
   const totalFuncionarios = filteredCollaborators.filter(c => c.type === "Funcionário").length;
 
-  // modais
+  // Modais
   const openNewCollaborator = () => {
-  setSelectedCollaborator({ ...INITIAL_NEW_COLLAB });
-  setModalMode("new");
-  setShowModal(true);
-};
-
+    setSelectedCollaborator({ ...INITIAL_NEW_COLLAB });
+    setModalMode("new");
+    setShowModal(true);
+  };
 
   const openEditCollaborator = (collab: Collaborator) => {
-  setSelectedCollaborator({
-    ...collab,
-    registration: collab.registration || collab.id?.toString() || Date.now().toString(),
-    status: collab.status || "Ativo",
-  });
-  setModalMode("edit");
-  setShowModal(true);
-};
-
+    setSelectedCollaborator({
+      ...collab,
+      registration: collab.registration || collab.id?.toString() || Date.now().toString(),
+      status: collab.status || "Ativo",
+    });
+    setModalMode("edit");
+    setShowModal(true);
+  };
 
   const handleSave = async (collab: Collaborator, mode: "new" | "edit") => {
-    // validação no front (mesmo padrão dos doadores)
     const validationError = validateCollaborator(collab);
     if (validationError) return alert(validationError);
 
-    // prepara payload a ser enviado (remover campos desnecessários)
     const collabToSend: any = {
   name: collab.name,
   registration: String(collab.registration),
@@ -120,10 +112,11 @@ export function ColaboradoresPage() {
   is_volunteer: collab.type === "Voluntário",
   function: collab.function || null,
   observation: collab.observation || null,
-  is_active: collab.status === "Ativo", // ajusta para o backend
+  is_active: mode === "new" ? true : collab.status === "Ativo",
   sector_id: null,
   user_id: null,
 };
+
 
     try {
       if (mode === "edit" && collab.id) {
@@ -269,51 +262,52 @@ export function ColaboradoresPage() {
         </table>
       </div>
 
-      {/* Paginação (com dots parecido com donors) */}
-      <div className="flex justify-center mt-6 gap-2 items-center">
-        <button
-          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-          disabled={currentPage === 1}
-          className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-        >
-          &laquo; Anterior
-        </button>
+      {/* Paginação */}
+<div className="flex justify-center mt-6 gap-2 items-center">
+  <button
+    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+    disabled={currentPage === 1}
+    className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+  >
+    &laquo; Anterior
+  </button>
 
-        {Array.from({ length: totalPages }, (_, i) => i + 1)
-          .filter(page =>
-            page === 1 ||
-            page === totalPages ||
-            (page >= currentPage - 1 && page <= currentPage + 1)
-          )
-          .map((page, idx, arr) => {
-            const prev = arr[idx - 1];
-            const showDots = prev && page - prev > 1;
-            return (
-              <span key={page} className="flex items-center">
-                {showDots && <span className="px-2">...</span>}
-                <button
-                  onClick={() => setCurrentPage(page)}
-                  className={`px-4 py-2 rounded-lg transition-colors ${
-                    page === currentPage
-                      ? "bg-orange-500 text-white font-semibold"
-                      : "bg-gray-100 hover:bg-gray-200"
-                  }`}
-                >
-                  {page}
-                </button>
-              </span>
-            );
-          })
-        }
+  {Array.from({ length: totalPages }, (_, i) => i + 1)
+    .map((page, idx, arr) => {
+      const prev = arr[idx - 1];
+      const showDots = prev && page - prev > 1;
+      if (
+        page === 1 ||
+        page === totalPages ||
+        (page >= currentPage - 1 && page <= currentPage + 1)
+      ) {
+        return (
+          <span key={page} className="flex items-center">
+            {showDots && <span className="px-2">...</span>}
+            <button
+              onClick={() => setCurrentPage(page)}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                page === currentPage
+                  ? "bg-orange-500 text-white font-semibold"
+                  : "bg-gray-100 hover:bg-gray-200"
+              }`}
+            >
+              {page}
+            </button>
+          </span>
+        );
+      }
+      return null;
+    })}
 
-        <button
-          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-          disabled={currentPage === totalPages || totalPages === 0}
-          className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-        >
-          Próximo &raquo;
-        </button>
-      </div>
+  <button
+    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+    disabled={currentPage === totalPages || totalPages === 0}
+    className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+  >
+    Próximo &raquo;
+  </button>
+</div>
 
       {/* Modais */}
       {showModal && selectedCollaborator && (
