@@ -1,7 +1,11 @@
+import { useNavigate } from "react-router-dom";
+import { clearSession } from "../../services/api";
+import { loadSession } from "../../services/api";
+import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
-  Package,
+  Heart,
   Tag,
   CreditCard,
   Users2,
@@ -10,17 +14,28 @@ import {
   FileText,
   DollarSign,
   Settings,
+  ChevronsLeftRight,
+  LogOut,
 } from "lucide-react";
 
-interface SidebarProps {
-  activeItem?: string;
-}
+type SidebarProps = {
+  isCollapsed: boolean;
+  setIsCollapsed: (value: boolean) => void;
+};
 
-export function Sidebar({ activeItem = "doadores" }: SidebarProps) {
+export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
+
+  const location = useLocation();
+  const { user } = loadSession();
+  const userEmail = user?.email || "";
+  const userInitial = userEmail.charAt(0).toUpperCase();
+  const firstName = userEmail.split("@")[0]; // pega o que vem antes do @
+  const formattedName = firstName.charAt(0).toUpperCase() + firstName.slice(1);
+
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { id: "doadores", label: "Doadores", icon: Users },
-    { id: "doacoes", label: "Doações", icon: Package },
+    { id: "donors", label: "Doadores", icon: Users },
+    { id: "doacoes", label: "Doações", icon: Heart },
     { id: "estoque", label: "Estoque", icon: Tag },
     { id: "saidas", label: "Saídas / Cestas", icon: CreditCard },
     { id: "colaboradores", label: "Colaboradores", icon: Users2 },
@@ -32,51 +47,109 @@ export function Sidebar({ activeItem = "doadores" }: SidebarProps) {
     { id: "configuracoes", label: "Configurações", icon: Settings },
   ];
 
+  const isItemActive = (id: string) =>
+    location.pathname === `/dashboard/${id}` ||
+    location.pathname.startsWith(`/dashboard/${id}/`) ||
+    (id === "dashboard" && location.pathname === "/dashboard");
+
+    const navigate = useNavigate();
+    function handleLogout() {
+      clearSession();
+      navigate("/", { replace: true });
+    }
+
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 min-h-screen flex flex-col">
-      <div className="p-4 border-b border-gray-200 flex items-center gap-2">
-        <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
-          <Package className="w-5 h-5 text-white" />
-        </div>
-        <span className="font-semibold text-gray-800">ONG Sem Fome</span>
+    <aside
+      className={`fixed top-0 left-0 h-screen border-r border-gray-200 transition-all duration-300
+      flex flex-col bg-white z-40 shadow-sm overflow-x-hidden
+      ${isCollapsed ? "w-20" : "w-64"}`}
+    >
+      {/* Header */}
+      <div className={`p-3 border-b border-gray-200 flex items-center relative ${isCollapsed ? "justify-center" : ""}`}>
+        {!isCollapsed && (
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
+              <Heart className="w-5 h-5 text-white" />
+            </div>
+            <span className="font-semibold text-gray-800 text-sm whitespace-nowrap">
+              ONG Sem Fome
+            </span>
+          </div>
+        )}
+
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className={`p-2 text-gray-600 hover:text-gray-900 transition rounded ${isCollapsed ? "" : "ml-auto"}`}
+          aria-label="Colapsar sidebar"
+        >
+          <ChevronsLeftRight className="w-5 h-5 hover:cursor-pointer" />
+        </button>
       </div>
 
-      <nav className="flex-1 p-4">
-        <ul className="space-y-1">
+
+      {/* Menu */}
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden p-2">
+        <ul className="flex flex-col gap-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const isActive = item.id === activeItem;
+            const active = isItemActive(item.id);
 
             return (
-              <li key={item.id}>
-                <button
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                    isActive
-                      ? "bg-orange-50 text-orange-600 font-medium"
-                      : "text-gray-600 hover:bg-gray-50"
-                  }`}
+              <li key={item.id} className="group relative">
+                <Link
+                  to={`/dashboard/${item.id === "dashboard" ? "" : item.id}`}
+                  className={`flex items-center gap-3 p-2 rounded-lg transition-all 
+                    ${isCollapsed ? "justify-center" : ""}
+                    ${active ? "bg-orange-500 text-white" : "text-gray-500 hover:bg-orange-500 hover:text-white"}
+                  `}
                 >
-                  <Icon className="w-5 h-5" />
-                  <span>{item.label}</span>
-                </button>
+                  <Icon className="w-5 h-5 shrink-0" />
+
+                  {/* Label some when collapsed */}
+                  {!isCollapsed && (
+                    <span className="text-sm font-medium truncate">
+                      {item.label}
+                    </span>
+                  )}
+                </Link>
+
+                {/* Tooltip personalizado - Apenas quando colapsado */}
+                {isCollapsed && (
+                  <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 
+                    bg-gray-800 text-white text-xs rounded-md px-2 py-1 whitespace-nowrap
+                    opacity-0 group-hover:opacity-100 shadow-lg pointer-events-none transition-opacity">
+                    {item.label}
+                  </div>
+                )}
               </li>
             );
           })}
         </ul>
       </nav>
 
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center gap-3">
+      {/* Footer */}
+      <div className="p-3 border-t border-gray-200">
+        <div
+          className={`flex items-center gap-3 transition-all ${
+            isCollapsed ? "justify-center" : ""
+          }`}
+        >
           <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-            <span className="text-sm font-medium text-gray-600">AU</span>
+            <span className="text-lx font-medium text-gray-600">{userInitial}</span>
           </div>
-          <div className="flex-1">
-            <p className="text-sm font-medium text-gray-800">Admin User</p>
-            <p className="text-xs text-gray-500">admin@example.com</p>
-          </div>
-          <button className="text-gray-400 hover:text-gray-600">
-            <Settings className="w-5 h-5" />
-          </button>
+
+          {!isCollapsed && (
+            <div>
+              <p className="text-sm font-medium text-gray-900">{formattedName}</p>
+              <p className="text-xs text-gray-500">{userEmail}</p>
+            </div>
+          )}
+
+          {!isCollapsed && (
+            <button onClick={handleLogout} className="ml-auto">
+              <LogOut className="w-5 h-5 text-gray-500 hover:text-orange-500 cursor-pointer" />
+            </button>
+          )}
         </div>
       </div>
     </aside>
