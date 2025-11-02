@@ -45,7 +45,6 @@ export const createCollaborator = async (collab: any) => {
   return response.data;
 };
 
-
 // PUT: atualizar colaborador
 export const updateCollaborator = async (id: number, collab: any) => {
   const payload = {
