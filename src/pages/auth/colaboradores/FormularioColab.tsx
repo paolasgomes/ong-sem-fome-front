@@ -10,7 +10,6 @@ interface CollaboratorFormModalProps {
   onSave: (collaborator: Collaborator, mode: "edit" | "new") => void;
 }
 
-// validação pública (exportada) — padronizada como em Donors
 export const validateCollaborator = (collab: Collaborator): string | null => {
   if (
     !collab.name ||
