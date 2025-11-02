@@ -12,7 +12,7 @@ import { DonorsPage } from "./pages/auth/donors/DonorsPage";
 import { FamiliasPage } from "./pages/auth/familias/FamiliasPage";
 import { ColaboradoresPage } from "./pages/auth/colaboradores/ColaboradoresPage";
 import { ErrorPage } from "./pages/ErrorPage";
-import { ProtectedRoute } from "./routes/ProtectedRoute"; // ✅ descomente e use!
+import { ProtectedRoute } from "./routes/ProtectedRoute"; 
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -24,6 +24,7 @@ createRoot(document.getElementById("root")!).render(
         {/* Rotas protegidas dentro do Layout */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Layout />}>
+
             <Route index element={<DashboardPage />} />
             <Route path="donors" element={<DonorsPage />} />
             <Route path="familias" element={<FamiliasPage />} />
@@ -38,6 +39,7 @@ createRoot(document.getElementById("root")!).render(
             <Route path="financeiro" element={<ErrorPage />} />
             <Route path="relatorios" element={<ErrorPage />} />
             <Route path="configuracoes" element={<ErrorPage />} />
+            
           </Route>
         </Route>
       </Routes>

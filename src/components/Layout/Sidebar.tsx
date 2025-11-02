@@ -29,7 +29,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
   const { user } = loadSession();
   const userEmail = user?.email || "";
   const userInitial = userEmail.charAt(0).toUpperCase();
-  const firstName = userEmail.split("@")[0]; // pega o que vem antes do @
+  const firstName = userEmail.split("@")[0]; 
   const formattedName = firstName.charAt(0).toUpperCase() + firstName.slice(1);
 
   const menuItems = [

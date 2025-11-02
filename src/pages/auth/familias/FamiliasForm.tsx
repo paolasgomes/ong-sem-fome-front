@@ -37,7 +37,7 @@ export const validateFamily = (family: Family): string | null => {
 
 // ----- Funções de máscara -----
 const formatCPF = (value: string) => {
-    const v = value.replace(/\D/g, '').slice(0, 11); // 123.456.789-10
+    const v = value.replace(/\D/g, '').slice(0, 11);
     return v
         .replace(/(\d{3})(\d)/, '$1.$2')
         .replace(/(\d{3})(\d)/, '$1.$2')
@@ -53,11 +53,11 @@ const formatPhone = (value: string) => {
 };
 
 const formatCEP = (value: string) => {
-    const v = value.replace(/\D/g, '').slice(0, 8); // limita 8 dígitos
+    const v = value.replace(/\D/g, '').slice(0, 8);
     return v.replace(/(\d{5})(\d)/, '$1-$2');
 };
 
-// ----- Componente DonorFormModal -----
+// ----- Componente FamilyFormModal -----
 export function FamilyFormModal({ initialFamily, mode, onClose, onSave }: FamilyFormModalProps) {
     const [familyData, setFamilyData] = useState<Family>({
         ...initialFamily,

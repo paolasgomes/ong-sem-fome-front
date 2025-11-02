@@ -12,7 +12,6 @@ headers: {
 },
 });
 
-// Request: anexa Bearer token
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem(TOKEN_KEY);
     if (token) {
@@ -22,7 +21,6 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
-// Response: trata 401 (expirado/invalidado)
 api.interceptors.response.use(
     (res) => res,
     (err) => {
@@ -65,7 +63,5 @@ export function clearSession() {
     localStorage.removeItem(USER_KEY);
 }
 
-
-// (opcional) helpers de acesso
 export const getToken = () => localStorage.getItem(TOKEN_KEY);
 export const setSession = (r: LoginResponse) => saveSession(r.token, r.user);
