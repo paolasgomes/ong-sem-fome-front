@@ -65,6 +65,7 @@ export function clearSession() {
     localStorage.removeItem(USER_KEY);
 }
 
+
 // (opcional) helpers de acesso
 export const getToken = () => localStorage.getItem(TOKEN_KEY);
 export const setSession = (r: LoginResponse) => saveSession(r.token, r.user);
