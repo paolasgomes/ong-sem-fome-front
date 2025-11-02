@@ -1,8 +1,10 @@
 import axios from "axios";
 import type { Collaborator } from "../types/Colaboradores";
 
+// Recupera o token salvo no localStorage
 const getToken = () => localStorage.getItem("@ong:token") || "";
 
+// Instância do Axios com baseURL e headers padrão
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000",
   headers: {
@@ -10,6 +12,7 @@ const api = axios.create({
   },
 });
 
+// Interceptor para adicionar o token de autenticação
 api.interceptors.request.use((config) => {
   const token = getToken();
   if (token) {
@@ -30,7 +33,7 @@ export const createCollaborator = async (collab: any) => {
   const payload = {
     name: collab.name,
     email: collab.email,
-    phone: collab.phone, // já formatado no front, mas backend pode limpar
+    phone: collab.phone,
     registration: collab.registration ?? Date.now().toString(),
     admission_date: collab.admission_date ?? null,
     dismissal_date: collab.dismissal_date ?? null,
@@ -45,6 +48,7 @@ export const createCollaborator = async (collab: any) => {
   return response.data;
 };
 
+// ----- PUT: atualizar colaborador -----
 export const updateCollaborator = async (id: number, collab: any) => {
   const payload = {
     name: collab.name,
@@ -59,6 +63,7 @@ export const updateCollaborator = async (id: number, collab: any) => {
     function: collab.function ?? null,
     observation: collab.observation ?? null,
     status: collab.status ?? "Ativo",
+    is_active: collab.status === "Ativo",
   };
 
   console.log("Payload enviado para PUT:", payload);
@@ -66,11 +71,6 @@ export const updateCollaborator = async (id: number, collab: any) => {
   const response = await api.put(`/collaborators/${id}`, payload);
   return response.data;
 };
-
-
-
-
-
 
 // ----- DELETE: remover colaborador -----
 export const deleteCollaborator = async (id: number) => {
