@@ -45,48 +45,55 @@ export function DonorsPage() {
   }, []);
 
   const fetchDonors = async () => {
-    try {
-      const data: Pagination<Donor> = await getDonors({ page: 1, limit: 1000 });
-      setDonors(data.results); // usa apenas os dados reais do backend
-    } catch (error) {
-      console.error(error);
-      alert("Falha ao carregar doadores.");
-    }
-  };
-
- const handleSave = async (donor: Donor, mode: "new" | "edit") => {
-  const validationError = validateDonor(donor);
-  if (validationError) return alert(validationError);
-
-  const donorToSend: any = { ...donor };
-
-  if (donor.type === "pessoa_fisica") {
-    delete donorToSend.cnpj;
-    donorToSend.cpf = donor.cpf?.replace(/\D/g, "");
-  } else {
-    delete donorToSend.cpf;
-    donorToSend.cnpj = donor.cnpj?.replace(/\D/g, "");
-  }
-
-  // Remover apenas campos que NÃO precisam ser enviados
-  delete donorToSend.totalDonations;
-  delete donorToSend.lastDonation;
-  // delete donorToSend.status;  <- removido para manter o status
-
   try {
-    if (mode === "edit" && donor.id) {
-      await updateDonor(donor.id, donorToSend);
-    } else {
-      await createDonor(donorToSend);
-    }
-    setShowModal(false);
-    fetchDonors(); // Recarrega do backend já com o status correto
-  } catch (error: any) {
+    const data: Pagination<Donor> = await getDonors({ page: 1, limit: 1000 });
+
+    // Mapeia is_active para status com type assertion
+    const mapped: Donor[] = data.results.map(donor => ({
+      ...donor,
+      status: donor.is_active ? "Ativo" as 'Ativo' : "Inativo" as 'Inativo',
+    }));
+
+    setDonors(mapped);
+  } catch (error) {
     console.error(error);
-    alert(error.response?.data?.error || "Erro ao salvar o doador.");
+    alert("Falha ao carregar doadores.");
   }
 };
 
+
+  const handleSave = async (donor: Donor, mode: "new" | "edit") => {
+    const validationError = validateDonor(donor);
+    if (validationError) return alert(validationError);
+
+    // Converte status para is_active ao enviar
+    const donorToSend: any = { ...donor, is_active: donor.status === "Ativo" };
+
+    if (donor.type === "pessoa_fisica") {
+      delete donorToSend.cnpj;
+      donorToSend.cpf = donor.cpf?.replace(/\D/g, "");
+    } else {
+      delete donorToSend.cpf;
+      donorToSend.cnpj = donor.cnpj?.replace(/\D/g, "");
+    }
+
+    // Remover campos que não precisam ser enviados
+    delete donorToSend.totalDonations;
+    delete donorToSend.lastDonation;
+
+    try {
+      if (mode === "edit" && donor.id) {
+        await updateDonor(donor.id, donorToSend);
+      } else {
+        await createDonor(donorToSend);
+      }
+      setShowModal(false);
+      fetchDonors();
+    } catch (error: any) {
+      console.error(error);
+      alert(error.response?.data?.error || "Erro ao salvar o doador.");
+    }
+  };
 
   const handleDelete = async () => {
     if (!selectedDonor?.id) return;
@@ -261,50 +268,49 @@ export function DonorsPage() {
       </div>
 
       {/* Paginação dinâmica */}
-<div className="flex justify-center mt-6 gap-2 items-center">
-  <button
-    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-    disabled={currentPage === 1}
-    className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-  >
-    &laquo; Anterior
-  </button>
+      <div className="flex justify-center mt-6 gap-2 items-center">
+        <button
+          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+          className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+        >
+          &laquo; Anterior
+        </button>
 
-  {Array.from({ length: totalPages }, (_, i) => i + 1)
-    .filter(page =>
-      page === 1 || 
-      page === totalPages || 
-      (page >= currentPage - 1 && page <= currentPage + 1)
-    )
-    .map((page, idx, arr) => {
-      const prev = arr[idx - 1];
-      const showDots = prev && page - prev > 1;
-      return (
-        <span key={page} className="flex items-center">
-          {showDots && <span className="px-2">...</span>}
-          <button
-            onClick={() => setCurrentPage(page)}
-            className={`px-4 py-2 rounded-lg transition-colors ${
-              page === currentPage
-                ? "bg-orange-500 text-white font-semibold"
-                : "bg-gray-100 hover:bg-gray-200"
-            }`}
-          >
-            {page}
-          </button>
-        </span>
-      );
-    })}
+        {Array.from({ length: totalPages }, (_, i) => i + 1)
+          .filter(page =>
+            page === 1 || 
+            page === totalPages || 
+            (page >= currentPage - 1 && page <= currentPage + 1)
+          )
+          .map((page, idx, arr) => {
+            const prev = arr[idx - 1];
+            const showDots = prev && page - prev > 1;
+            return (
+              <span key={page} className="flex items-center">
+                {showDots && <span className="px-2">...</span>}
+                <button
+                  onClick={() => setCurrentPage(page)}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    page === currentPage
+                      ? "bg-orange-500 text-white font-semibold"
+                      : "bg-gray-100 hover:bg-gray-200"
+                  }`}
+                >
+                  {page}
+                </button>
+              </span>
+            );
+          })}
 
-  <button
-    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-    disabled={currentPage === totalPages || totalPages === 0}
-    className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-  >
-    Próximo &raquo;
-  </button>
-</div>
-
+        <button
+          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+          disabled={currentPage === totalPages || totalPages === 0}
+          className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+        >
+          Próximo &raquo;
+        </button>
+      </div>
 
       {/* Modais */}
       {showModal && selectedDonor && (

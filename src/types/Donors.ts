@@ -11,7 +11,7 @@ export type Donor = {
   name: string;
   email: string;
   phone: string;
-  cpf?: string; // só PF vai ter
+  cpf?: string; 
   cnpj?: string;
   street_number: string;
   street_complement?: string;
@@ -21,7 +21,8 @@ export type Donor = {
   zip_code: string;
   street_address: string;
   observation?: string;
-  status?: 'Ativo' | 'Inativo';
+  status?: 'Ativo' | 'Inativo'; // usado para exibição
+  is_active?: boolean;          // novo campo do backend
   totalDonations?: number;
   lastDonation?: string;
 };

@@ -43,22 +43,20 @@ export function ColaboradoresPage() {
 
       // usa diretamente os dados do backend, normalizando para o tipo local
       setCollaborators(
-        data.map((c: any) => ({
-          id: c.id,
-          name: c.name,
-          registration: c.registration ?? String(c.id ?? Date.now()),
-          email: c.email,
-          phone: c.phone,
-          type:
-            String(c.is_volunteer) === "1" || c.is_volunteer === true
-              ? "Voluntário"
-              : "Funcionário",
-          function: c.function ?? "",
-          observation: c.observation ?? "",
-          status: c.status ?? "Ativo",
-          date_joined: c.admission_date ? c.admission_date.split("T")[0] : "",
-        }))
-      );
+  data.map((c: any) => ({
+    id: c.id,
+    name: c.name,
+    registration: c.registration ?? String(c.id ?? Date.now()),
+    email: c.email,
+    phone: c.phone,
+    type: c.is_volunteer ? "Voluntário" : "Funcionário",
+    function: c.function ?? "",
+    observation: c.observation ?? "",
+    status: c.is_active ? "Ativo" : "Inativo", // usar is_active do backend
+    date_joined: c.admission_date ? c.admission_date.split("T")[0] : "",
+  }))
+);
+
     } catch (error) {
       console.error(error);
       alert("Erro ao carregar colaboradores.");
@@ -89,19 +87,22 @@ export function ColaboradoresPage() {
 
   // modais
   const openNewCollaborator = () => {
-    setSelectedCollaborator(INITIAL_NEW_COLLAB);
-    setModalMode("new");
-    setShowModal(true);
-  };
+  setSelectedCollaborator({ ...INITIAL_NEW_COLLAB });
+  setModalMode("new");
+  setShowModal(true);
+};
+
 
   const openEditCollaborator = (collab: Collaborator) => {
-    setSelectedCollaborator({
-      ...collab,
-      registration: collab.registration || collab.id?.toString() || Date.now().toString(),
-    });
-    setModalMode("edit");
-    setShowModal(true);
-  };
+  setSelectedCollaborator({
+    ...collab,
+    registration: collab.registration || collab.id?.toString() || Date.now().toString(),
+    status: collab.status || "Ativo",
+  });
+  setModalMode("edit");
+  setShowModal(true);
+};
+
 
   const handleSave = async (collab: Collaborator, mode: "new" | "edit") => {
     // validação no front (mesmo padrão dos doadores)
@@ -110,19 +111,19 @@ export function ColaboradoresPage() {
 
     // prepara payload a ser enviado (remover campos desnecessários)
     const collabToSend: any = {
-      name: collab.name,
-      registration: String(collab.registration),
-      email: collab.email,
-      phone: collab.phone.replace(/\D/g, ""),
-      admission_date: collab.date_joined ? new Date(collab.date_joined).toISOString() : null,
-      dismissal_date: null,
-      is_volunteer: collab.type === "Voluntário",
-      function: collab.function || null,
-      observation: collab.observation || null,
-      status: collab.status || "Ativo",
-      sector_id: null,
-      user_id: null,
-    };
+  name: collab.name,
+  registration: String(collab.registration),
+  email: collab.email,
+  phone: collab.phone.replace(/\D/g, ""),
+  admission_date: collab.date_joined ? new Date(collab.date_joined).toISOString() : null,
+  dismissal_date: null,
+  is_volunteer: collab.type === "Voluntário",
+  function: collab.function || null,
+  observation: collab.observation || null,
+  is_active: collab.status === "Ativo", // ajusta para o backend
+  sector_id: null,
+  user_id: null,
+};
 
     try {
       if (mode === "edit" && collab.id) {
