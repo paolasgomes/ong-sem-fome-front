@@ -97,37 +97,40 @@ export function ColaboradoresPage() {
   };
 
   const handleSave = async (collab: Collaborator, mode: "new" | "edit") => {
-    const validationError = validateCollaborator(collab);
-    if (validationError) return alert(validationError);
+  const validationError = validateCollaborator(collab);
+  if (validationError) return alert(validationError);
 
-    const collabToSend: any = {
-  name: collab.name,
-  registration: String(collab.registration),
-  email: collab.email,
-  phone: collab.phone.replace(/\D/g, ""),
-  admission_date: collab.date_joined ? new Date(collab.date_joined).toISOString() : null,
-  dismissal_date: null,
-  is_volunteer: collab.type === "Voluntário",
-  function: collab.function || null,
-  observation: collab.observation || null,
-  is_active: mode === "new" ? true : collab.status === "Ativo",
-  sector_id: null,
-  user_id: null,
+  const collabToSend: any = {
+    name: collab.name,
+    registration: mode === "new" ? Date.now().toString() : String(collab.registration),
+    email: collab.email,
+    phone: collab.phone.replace(/\D/g, ""),
+    admission_date: collab.date_joined ? new Date(collab.date_joined).toISOString() : null,
+    dismissal_date: null,
+    is_volunteer: collab.type === "Voluntário",
+    is_active: mode === "new" ? true : collab.status === "Ativo",
+    sector_id: null,
+    user_id: null,
+  };
+
+  try {
+    if (mode === "edit" && collab.id) {
+      await updateCollaborator(collab.id, collabToSend);
+    } else {
+      await createCollaborator(collabToSend);
+    }
+    setShowModal(false);
+    fetchCollaborators();
+  } catch (error: any) {
+    console.error(error);
+    if (error.response?.status === 400) {
+      alert(error.response.data.error || "Já existe um colaborador com este registro ou email");
+    } else {
+      alert("Erro ao salvar colaborador.");
+    }
+  }
 };
 
-    try {
-      if (mode === "edit" && collab.id) {
-        await updateCollaborator(collab.id, collabToSend);
-      } else {
-        await createCollaborator(collabToSend);
-      }
-      setShowModal(false);
-      fetchCollaborators();
-    } catch (error: any) {
-      console.error(error);
-      alert(error?.response?.data?.error || "Erro ao salvar colaborador.");
-    }
-  };
 
   const handleDelete = async () => {
     if (!selectedCollaborator?.id) return;
