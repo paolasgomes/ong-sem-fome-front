@@ -1,5 +1,7 @@
 // services/api.ts
 import axios from "axios";
+import type { IUser } from "./apiUser";
+
 
 const TOKEN_KEY = "@ong:token";
 const USER_KEY  = "@ong:user";
@@ -35,9 +37,10 @@ api.interceptors.response.use(
 }
 );
 
-export type AuthUser = {
+/*export type AuthUser = {
     email: string;
-};
+};*/
+
 
 export type LoginResponse = {
     token: string;
@@ -69,3 +72,4 @@ export function clearSession() {
 // (opcional) helpers de acesso
 export const getToken = () => localStorage.getItem(TOKEN_KEY);
 export const setSession = (r: LoginResponse) => saveSession(r.token, r.user);
+export type AuthUser = Omit<IUser, "password">;
