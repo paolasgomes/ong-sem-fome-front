@@ -1,4 +1,3 @@
-// apiDonors.ts
 import type { Pagination, Donor } from "../types/Donors";
 import axios from "axios";
 
