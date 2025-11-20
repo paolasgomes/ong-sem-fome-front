@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { clearSession } from "../../services/api";
-import { loadSession } from "../../services/api";
+import { clearSession, loadSession } from "../../services/api";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -24,14 +23,22 @@ type SidebarProps = {
 };
 
 export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
-
   const location = useLocation();
   const { user } = loadSession();
-  const userEmail = user?.email || "";
-  const userInitial = userEmail.charAt(0).toUpperCase();
-  const firstName = userEmail.split("@")[0]; // pega o que vem antes do @
-  const formattedName = firstName.charAt(0).toUpperCase() + firstName.slice(1);
 
+  const role = user?.role ?? "logistica"; // <- ROLE DO BACK-END
+
+  const userName = user?.name || "";
+  const userEmail = user?.email || "";
+  const userInitial = userName.charAt(0).toUpperCase();
+
+// Primeiro nome
+  const formattedName =
+  userName.split(" ")[0].charAt(0).toUpperCase() +
+  userName.split(" ")[0].slice(1);
+
+
+  // Menu completo
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "donors", label: "Doadores", icon: Users },
@@ -47,16 +54,34 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
     { id: "configuracoes", label: "Configurações", icon: Settings },
   ];
 
+  // Permissões por role (AJUSTE COMO QUISER)
+  const permissions = {
+    admin: [
+      "dashboard", "donors", "doacoes", "estoque", "saidas",
+      "colaboradores", "familias", "campanhas", "solicitacoes",
+      "financeiro", "relatorios", "configuracoes"
+    ],
+    logistica: [
+      "dashboard", "donors", "doacoes", "estoque", "saidas",
+      "familias", "solicitacoes"
+    ],
+    financeiro: [
+      "dashboard", "financeiro", "relatorios"
+    ]
+  };
+
+const allowedMenus = permissions[role];
+
   const isItemActive = (id: string) =>
     location.pathname === `/dashboard/${id}` ||
     location.pathname.startsWith(`/dashboard/${id}/`) ||
     (id === "dashboard" && location.pathname === "/dashboard");
 
-    const navigate = useNavigate();
-    function handleLogout() {
-      clearSession();
-      navigate("/", { replace: true });
-    }
+  const navigate = useNavigate();
+  function handleLogout() {
+    clearSession();
+    navigate("/", { replace: true });
+  }
 
   return (
     <aside
@@ -86,44 +111,43 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
         </button>
       </div>
 
-
       {/* Menu */}
       <nav className="flex-1 overflow-y-auto overflow-x-hidden p-2">
         <ul className="flex flex-col gap-2">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const active = isItemActive(item.id);
+          {menuItems
+            .filter(item => allowedMenus.includes(item.id)) // ⬅ FILTRO POR ROLE
+            .map((item) => {
+              const Icon = item.icon;
+              const active = isItemActive(item.id);
 
-            return (
-              <li key={item.id} className="group relative">
-                <Link
-                  to={`/dashboard/${item.id === "dashboard" ? "" : item.id}`}
-                  className={`flex items-center gap-3 p-2 rounded-lg transition-all 
-                    ${isCollapsed ? "justify-center" : ""}
-                    ${active ? "bg-orange-500 text-white" : "text-gray-500 hover:bg-orange-500 hover:text-white"}
-                  `}
-                >
-                  <Icon className="w-5 h-5 shrink-0" />
+              return (
+                <li key={item.id} className="group relative">
+                  <Link
+                    to={`/dashboard/${item.id === "dashboard" ? "" : item.id}`}
+                    className={`flex items-center gap-3 p-2 rounded-lg transition-all 
+                      ${isCollapsed ? "justify-center" : ""}
+                      ${active ? "bg-orange-500 text-white" : "text-gray-500 hover:bg-orange-500 hover:text-white"}
+                    `}
+                  >
+                    <Icon className="w-5 h-5 shrink-0" />
 
-                  {/* Label some when collapsed */}
-                  {!isCollapsed && (
-                    <span className="text-sm font-medium truncate">
+                    {!isCollapsed && (
+                      <span className="text-sm font-medium truncate">
+                        {item.label}
+                      </span>
+                    )}
+                  </Link>
+
+                  {isCollapsed && (
+                    <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 
+                      bg-gray-800 text-white text-xs rounded-md px-2 py-1 whitespace-nowrap
+                      opacity-0 group-hover:opacity-100 shadow-lg pointer-events-none transition-opacity">
                       {item.label}
-                    </span>
+                    </div>
                   )}
-                </Link>
-
-                {/* Tooltip personalizado - Apenas quando colapsado */}
-                {isCollapsed && (
-                  <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 
-                    bg-gray-800 text-white text-xs rounded-md px-2 py-1 whitespace-nowrap
-                    opacity-0 group-hover:opacity-100 shadow-lg pointer-events-none transition-opacity">
-                    {item.label}
-                  </div>
-                )}
-              </li>
-            );
-          })}
+                </li>
+              );
+            })}
         </ul>
       </nav>
 
