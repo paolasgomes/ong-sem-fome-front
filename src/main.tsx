@@ -12,8 +12,10 @@ import { DonorsPage } from "./pages/auth/donors/DonorsPage";
 import { FamiliasPage } from "./pages/auth/familias/FamiliasPage";
 import { ColaboradoresPage } from "./pages/auth/colaboradores/ColaboradoresPage";
 import { ErrorPage } from "./pages/ErrorPage";
-import { ProtectedRoute } from "./routes/ProtectedRoute"; // ✅ descomente e use!
+import { ProtectedRoute } from "./routes/ProtectedRoute";
 import { DoacoesPage } from "./pages/auth/doacoes/DoacoesPage";
+import { SettingsPage } from "./pages/auth/configuracoes/ConfigPage";
+import { EstoquePage } from "./pages/auth/estoque/EstoquePage";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -30,15 +32,17 @@ createRoot(document.getElementById("root")!).render(
             <Route path="familias" element={<FamiliasPage />} />
             <Route path="colaboradores" element={<ColaboradoresPage />} />
             <Route path="doacoes" element={<DoacoesPage/>} />
+            <Route path="configuracoes" element={<SettingsPage />} />
+            <Route path="estoque" element={<EstoquePage />} />
 
             {/* Outras rotas internas */}
-            <Route path="estoque" element={<ErrorPage />} />
+            
             <Route path="saidas" element={<ErrorPage />} />
             <Route path="campanhas" element={<ErrorPage />} />
             <Route path="solicitacoes" element={<ErrorPage />} />
             <Route path="financeiro" element={<ErrorPage />} />
             <Route path="relatorios" element={<ErrorPage />} />
-            <Route path="configuracoes" element={<ErrorPage />} />
+            
           </Route>
         </Route>
       </Routes>

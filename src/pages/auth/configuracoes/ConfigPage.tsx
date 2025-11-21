@@ -1,12 +1,14 @@
 import { useState } from "react";
 import {UsersPage} from "./components/UserPage";
+import { ProductsPage } from "./components/ProductPage";
+import { CategoryPage } from "./components/CategoryPage";
 
 export function SettingsPage() {
-    const [activeTab, setActiveTab] = useState("usuarios");
+    const [activeTab, setActiveTab] = useState("categorias");
 
     const tabs = [
         { id: "categorias", label: "Categorias" },
-        { id: "programas", label: "Programas" },
+        { id: "produtos", label: "Produtos" },
         { id: "setores", label: "Setores" },
         { id: "usuarios", label: "Usuários" },
         { id: "sistema", label: "Sistema" },
@@ -16,7 +18,7 @@ export function SettingsPage() {
         <div className="p-6 w-full">
             <h2 className="text-2xl font-semibold mb-1">Configurações</h2>
             <p className="text-sm text-gray-600 mb-4">
-                Gestão de categorias, programas sociais, setores, usuários e perfis
+                Gestão de categorias, cadastro de produtos, setores, usuários e perfis
             </p>
 
             {/* Abas */}
@@ -39,7 +41,12 @@ export function SettingsPage() {
             {/* Conteúdo da aba selecionada */}
             <div>
                 {activeTab === "usuarios" && <UsersPage />}
-                {activeTab !== "usuarios" && (
+                {activeTab === "produtos" && <ProductsPage />}
+                {activeTab === "categorias" && <CategoryPage />}
+
+                {/* Ainda não implementadas */}
+                {(activeTab === "setores" ||
+                activeTab === "sistema") && (
                     <div className="text-gray-500 text-sm">
                         Esta seção será implementada futuramente.
                     </div>

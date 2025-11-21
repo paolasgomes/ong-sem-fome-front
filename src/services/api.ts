@@ -37,11 +37,6 @@ api.interceptors.response.use(
 }
 );
 
-/*export type AuthUser = {
-    email: string;
-};*/
-
-
 export type LoginResponse = {
     token: string;
     user: AuthUser;
@@ -67,7 +62,6 @@ export function clearSession() {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
 }
-
 
 // (opcional) helpers de acesso
 export const getToken = () => localStorage.getItem(TOKEN_KEY);
