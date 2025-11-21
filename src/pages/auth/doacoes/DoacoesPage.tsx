@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Search, PlusCircle, Eye, Gift, Package, CalendarDays, Coins } from "lucide-react";
-import { getDonations, createDonation } from "../../../services/apidoacoes";
+import { getDonations, createDonation } from "../../../services/apiDoacoes";
 import type { Donation, Pagination } from "../../../types/Doacoes";
 import { DonationFormModal } from "./DoacaoFormModal";
 import { DoacaoDetalhesModal } from "./DoacaoDetalhesModal";

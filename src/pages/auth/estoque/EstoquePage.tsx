@@ -1,59 +1,102 @@
 import { useState } from "react";
-import { Package, AlertTriangle, Layers, TrendingUp, Search, Pencil } from "lucide-react";
+import { Package, AlertTriangle, Layers, Search, Pencil } from "lucide-react";
+import { calculateStockInfo } from "../../../utils/stockUtils";
+import { updateStock } from "../../../services/apiStock";
 
 export function EstoquePage() {
 const [searchTerm, setSearchTerm] = useState("");
 const [categoryFilter, setCategoryFilter] = useState("Todas as categorias");
 const [statusFilter, setStatusFilter] = useState("Todos os status");
 
-// Dados simulados
+// Modal de ENTRADA manual
+const [openEntryModal, setOpenEntryModal] = useState(false);
+const [selectedProductId, setSelectedProductId] = useState("");
+const [entryQuantity, setEntryQuantity] = useState("");
+
+// Modal de edição (lápis)
+const [openModal, setOpenModal] = useState(false);
+const [selectedProduct, setSelectedProduct] = useState<any>(null);
+const [newQuantity, setNewQuantity] = useState("");
+
+function openUpdateModal(product: any) {
+    setSelectedProduct(product);
+    setOpenModal(true);
+}
+
+// DADOS SIMULADOS
 const produtos = [
     {
-    nome: "Arroz Branco 5kg",
-    categoria: "Grãos",
-    quantidade: "150 pacotes",
-    nivel: 75,
-    validade: "30/12/2024",
-    diasRestantes: -327,
-    localizacao: "Setor A1",
-    status: "Normal",
+    id: 1,
+    name: "Arroz Branco 5kg",
+    category: "Grãos",
+    in_stock: 150,
+    minimum_stock: 40
     },
     {
-    nome: "Feijão Preto 1kg",
-    categoria: "Grãos",
-    quantidade: "25 pacotes",
-    nivel: 25,
-    validade: "29/11/2024",
-    diasRestantes: -268,
-    localizacao: "Setor A2",
-    status: "Baixo",
+    id: 2,
+    name: "Feijão Preto 1kg",
+    category: "Grãos",
+    in_stock: 25,
+    minimum_stock: 40
     },
     {
-    nome: "Óleo de Soja 900ml",
-    categoria: "Enlatados",
-    quantidade: "80 unidades",
-    nivel: 67,
-    validade: "14/10/2024",
-    diasRestantes: -314,
-    localizacao: "Setor B1",
-    status: "Normal",
+    id: 3,
+    name: "Óleo de Soja 900ml",
+    category: "Enlatados",
+    in_stock: 80,
+    minimum_stock: 30
     },
     {
-    nome: "Sabonete",
-    categoria: "Higiene",
-    quantidade: "15 unidades",
-    nivel: 25,
-    validade: "29/06/2025",
-    diasRestantes: -56,
-    localizacao: "Setor C1",
-    status: "Baixo",
-    },
+    id: 4,
+    name: "Sabonete",
+    category: "Higiene",
+    in_stock: 15,
+    minimum_stock: 40
+    }
 ];
 
+// APLICA FILTROS
 const filtered = produtos.filter((p) =>
-    p.nome.toLowerCase().includes(searchTerm.toLowerCase())
+    p.name.toLowerCase().includes(searchTerm.toLowerCase())
 );
 
+// Atualização do modal de edição
+async function handleUpdate() {
+    try {
+    const quantityNumber = Number(newQuantity);
+
+    await updateStock(selectedProduct.id, quantityNumber);
+
+    alert("Estoque atualizado com sucesso!");
+
+    setOpenModal(false);
+    setNewQuantity("");
+    } catch (error) {
+    alert("Erro ao atualizar o estoque");
+    }
+}
+
+// Entrada manual
+async function handleManualEntry() {
+    if (!selectedProductId || !entryQuantity) {
+    alert("Selecione o produto e quantidade.");
+    return;
+    }
+
+    try {
+    await updateStock(Number(selectedProductId), Number(entryQuantity));
+
+    alert("Entrada registrada com sucesso!");
+
+    setOpenEntryModal(false);
+    setEntryQuantity("");
+    setSelectedProductId("");
+    } catch (error) {
+    alert("Erro ao registrar entrada manual");
+    }
+}
+
+// RENDER
 return (
     <div className="p-10 bg-gray-50 min-h-screen text-sm text-gray-700 relative">
     {/* Header */}
@@ -64,17 +107,23 @@ return (
             Controle de produtos por categorias
         </p>
         </div>
-        <button className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 cursor-pointer text-white font-semibold px-4 py-2 rounded-lg shadow-md transition-colors">
+
+        <button
+        className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 cursor-pointer text-white font-semibold px-4 py-2 rounded-lg shadow-md transition-colors"
+        onClick={() => setOpenEntryModal(true)}
+        >
         + Entrada Manual
         </button>
     </div>
 
     {/* Cards de resumo */}
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
         <div className="bg-white rounded-xl p-6 shadow-sm flex items-center justify-between border border-gray-100">
         <div>
             <p className="text-xs text-gray-500">Total de Itens</p>
-            <p className="text-3xl font-bold mt-1 text-gray-800">4</p>
+            <p className="text-3xl font-bold mt-1 text-gray-800">
+            {produtos.length}
+            </p>
         </div>
         <div className="bg-blue-50 p-4 rounded-full">
             <Package className="text-blue-500 w-7 h-7" />
@@ -84,20 +133,12 @@ return (
         <div className="bg-white rounded-xl p-6 shadow-sm flex items-center justify-between border border-gray-100">
         <div>
             <p className="text-xs text-gray-500">Estoque Baixo</p>
-            <p className="text-3xl font-bold mt-1 text-gray-800">2</p>
+            <p className="text-3xl font-bold mt-1 text-gray-800">
+            {produtos.filter((p) => calculateStockInfo(p).status !== "Normal").length}
+            </p>
         </div>
         <div className="bg-red-50 p-4 rounded-full">
             <AlertTriangle className="text-red-500 w-7 h-7" />
-        </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 shadow-sm flex items-center justify-between border border-gray-100">
-        <div>
-            <p className="text-xs text-gray-500">Vencendo</p>
-            <p className="text-3xl font-bold mt-1 text-gray-800">4</p>
-        </div>
-        <div className="bg-yellow-50 p-4 rounded-full">
-            <AlertTriangle className="text-yellow-500 w-7 h-7" />
         </div>
         </div>
 
@@ -127,7 +168,7 @@ return (
         <div className="flex gap-3 w-full sm:w-auto">
         <select
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 appearance-none bg-white"
+            className="border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
         >
             <option>Todas as categorias</option>
             <option>Grãos</option>
@@ -137,11 +178,12 @@ return (
 
         <select
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 appearance-none bg-white"
+            className="border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
         >
             <option>Todos os status</option>
             <option>Normal</option>
             <option>Baixo</option>
+            <option>Crítico</option>
         </select>
         </div>
     </div>
@@ -155,68 +197,162 @@ return (
             <th className="py-3 px-6">Categoria</th>
             <th className="py-3 px-6">Quantidade</th>
             <th className="py-3 px-6">Nível do Estoque</th>
-            <th className="py-3 px-6">Validade</th>
-            <th className="py-3 px-6">Localização</th>
             <th className="py-3 px-6">Status</th>
             <th className="py-3 px-6 text-center">Ações</th>
             </tr>
         </thead>
+
         <tbody>
-            {filtered.map((p, i) => (
-            <tr key={i} className="hover:bg-gray-50 transition">
+            {filtered.map((p, i) => {
+            const stock = calculateStockInfo(p);
+
+            return (
+                <tr key={i} className="hover:bg-gray-50 transition">
                 <td className="py-3 px-6 font-medium text-gray-800">
-                {p.nome}
-                <div className="text-xs text-gray-400">
+                    {p.name}
+                    <div className="text-xs text-gray-400">
                     Última movimentação: 14/01/2024
-                </div>
+                    </div>
                 </td>
-                <td className="py-3 px-6">{p.categoria}</td>
-                <td className="py-3 px-6">{p.quantidade}</td>
+
+                <td className="py-3 px-6">{p.category}</td>
+
+                <td className="py-3 px-6">{p.in_stock} un.</td>
+
                 <td className="py-3 px-6">
-                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
                     <div
-                    className={`h-2.5 rounded-full ${
-                        p.nivel < 30
-                        ? "bg-red-400"
-                        : p.nivel < 60
-                        ? "bg-yellow-400"
-                        : "bg-green-500"
-                    }`}
-                    style={{ width: `${p.nivel}%` }}
+                        className={`
+                            h-2.5 rounded-full 
+                            ${stock.status === "Crítico" ? "bg-red-500" : ""}
+                            ${stock.status === "Baixo" ? "bg-yellow-400" : ""}
+                            ${stock.status === "Normal" ? "bg-green-500" : ""}
+                        `}
+                        style={{ width: `${stock.percent}%` }}
                     ></div>
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                    {p.nivel}% da capacidade
-                </p>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                    {stock.percent}% da capacidade
+                    </p>
                 </td>
+
                 <td className="py-3 px-6">
-                <div>{p.validade}</div>
-                <div className="flex items-center gap-1 text-xs text-yellow-600">
-                    <AlertTriangle className="text-yellow-600 w-4 h-4" /> {p.diasRestantes} dias
-                </div>
+                    <span
+                    className={`
+                        px-3 py-1 rounded-full text-xs font-semibold
+                        ${
+                        stock.status === "Crítico"
+                            ? "bg-red-100 text-red-700"
+                            : stock.status === "Baixo"
+                            ? "bg-yellow-100 text-yellow-700"
+                            : "bg-green-100 text-green-700"
+                        }
+                    `}
+                    >
+                    {stock.status}
+                    </span>
                 </td>
-                <td className="py-3 px-6">{p.localizacao}</td>
-                <td className="py-3 px-6">
-                <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    p.status === "Baixo"
-                        ? "bg-red-100 text-red-700"
-                        : "bg-green-100 text-green-700"
-                    }`}
-                >
-                    {p.status}
-                </span>
-                </td>
+
                 <td className="py-3 px-6 text-center">
-                <button className="p-2 text-blue-500 hover:text-blue-700 cursor-pointer transition">
+                    <button
+                    className="p-2 text-blue-500 hover:text-blue-700 transition"
+                    onClick={() => openUpdateModal(p)}
+                    >
                     <Pencil className="w-4 h-4" />
-                </button>
+                    </button>
                 </td>
-            </tr>
-            ))}
+                </tr>
+            );
+            })}
         </tbody>
         </table>
     </div>
+
+    {/* MODAL: Entrada Manual */}
+    {openEntryModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+        <div className="bg-white p-6 rounded-xl w-96 shadow-lg">
+            <h2 className="text-lg font-semibold mb-4">Entrada Manual</h2>
+
+            <label className="text-sm font-medium">Produto</label>
+            <select
+            value={selectedProductId}
+            onChange={(e) => setSelectedProductId(e.target.value)}
+            className="w-full border rounded-lg px-3 py-2 mb-4"
+            >
+            <option value="">Selecione...</option>
+            {produtos.map((p) => (
+                <option key={p.id} value={p.id}>
+                {p.name}
+                </option>
+            ))}
+            </select>
+
+            <label className="text-sm font-medium">
+            Quantidade de entrada
+            </label>
+            <input
+            type="number"
+            value={entryQuantity}
+            onChange={(e) => setEntryQuantity(e.target.value)}
+            className="w-full border rounded-lg px-3 py-2 mb-4"
+            placeholder="Ex: 20"
+            />
+
+            <div className="flex justify-end gap-3">
+            <button
+                className="px-4 py-2 bg-gray-300 rounded-lg"
+                onClick={() => setOpenEntryModal(false)}
+            >
+                Cancelar
+            </button>
+
+            <button
+                className="px-4 py-2 bg-orange-500 text-white rounded-lg"
+                onClick={handleManualEntry}
+            >
+                Confirmar
+            </button>
+            </div>
+        </div>
+        </div>
+    )}
+
+    {/* MODAL: Editar quantidade (botão lápis) */}
+    {openModal && selectedProduct && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+        <div className="bg-white p-6 rounded-xl w-96 shadow-lg">
+            <h2 className="text-lg font-semibold mb-4">
+            Atualizar estoque de {selectedProduct.name}
+            </h2>
+
+            <label className="text-sm font-medium">Novo estoque</label>
+            <input
+            type="number"
+            value={newQuantity}
+            onChange={(e) => setNewQuantity(e.target.value)}
+            className="w-full border rounded-lg px-3 py-2 mb-4"
+            placeholder="Ex: 150"
+            />
+
+            <div className="flex justify-end gap-3">
+            <button
+                className="px-4 py-2 bg-gray-300 rounded-lg"
+                onClick={() => setOpenModal(false)}
+            >
+                Cancelar
+            </button>
+
+            <button
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+                onClick={handleUpdate}
+            >
+                Atualizar
+            </button>
+            </div>
+        </div>
+        </div>
+    )}
     </div>
 );
 }
