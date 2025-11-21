@@ -59,6 +59,17 @@ export function DoacoesPage() {
     (d) => new Date(d.created_at).getMonth() === mesAtual
   ).length;
 
+  // --- Formatação de números ---
+  const formatNumber = (value: number): string => {
+    if (value >= 1_000_000) return (value / 1_000_000).toFixed(1) + "M";
+    if (value >= 1_000) return (value / 1_000).toFixed(1) + "k";
+    return value.toString();
+  };
+
+  const formatCurrency = (value: number): string => {
+    return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  };
+
   return (
     <div className="p-10 bg-gray-50 min-h-screen text-sm text-gray-700">
 
@@ -86,7 +97,7 @@ export function DoacoesPage() {
         <div className="bg-white rounded-xl p-6 shadow-sm flex items-center justify-between border border-gray-100">
           <div>
             <p className="text-xs text-gray-500">Total de Doações</p>
-            <p className="text-3xl font-bold mt-1 text-gray-800">{filteredDonations.length}</p>
+            <p className="text-3xl font-bold mt-1 text-gray-800">{formatNumber(filteredDonations.length)}</p>
           </div>
           <div className="bg-orange-50 p-4 rounded-full">
             <Gift className="text-orange-500 w-7 h-7" />
@@ -97,9 +108,7 @@ export function DoacoesPage() {
         <div className="bg-white rounded-xl p-6 shadow-sm flex items-center justify-between border border-gray-100">
           <div>
             <p className="text-xs text-gray-500">Valor Total</p>
-            <p className="text-3xl font-bold mt-1 text-gray-800">
-              R$ {totalValor.toFixed(2)}
-            </p>
+            <p className="text-3xl font-bold mt-1 text-gray-800">{formatCurrency(totalValor)}</p>
           </div>
           <div className="bg-green-50 p-4 rounded-full">
             <Coins className="text-green-500 w-7 h-7" />
@@ -110,7 +119,7 @@ export function DoacoesPage() {
         <div className="bg-white rounded-xl p-6 shadow-sm flex items-center justify-between border border-gray-100">
           <div>
             <p className="text-xs text-gray-500">Quantidade Total (itens)</p>
-            <p className="text-3xl font-bold mt-1 text-gray-800">{totalQuantidade}</p>
+            <p className="text-3xl font-bold mt-1 text-gray-800">{formatNumber(totalQuantidade)}</p>
           </div>
           <div className="bg-blue-50 p-4 rounded-full">
             <Package className="text-blue-500 w-7 h-7" />
@@ -121,7 +130,7 @@ export function DoacoesPage() {
         <div className="bg-white rounded-xl p-6 shadow-sm flex items-center justify-between border border-gray-100">
           <div>
             <p className="text-xs text-gray-500">Doações deste mês</p>
-            <p className="text-3xl font-bold mt-1 text-gray-800">{totalEsteMes}</p>
+            <p className="text-3xl font-bold mt-1 text-gray-800">{formatNumber(totalEsteMes)}</p>
           </div>
           <div className="bg-purple-50 p-4 rounded-full">
             <CalendarDays className="text-purple-500 w-7 h-7" />
@@ -132,7 +141,6 @@ export function DoacoesPage() {
       {/* Filtro */}
       <div className="relative w-full sm:w-1/2 mb-6">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-
         <input
           type="text"
           placeholder="Buscar por doador, produto ou observações..."
@@ -163,14 +171,10 @@ export function DoacoesPage() {
           <tbody>
             {filteredDonations.map((donation) => (
               <tr key={donation.id} className="hover:bg-gray-50 transition">
-                <td className="py-3 px-6">
-                  {new Date(donation.created_at).toLocaleDateString()}
-                </td>
-
+                <td className="py-3 px-6">{new Date(donation.created_at).toLocaleDateString()}</td>
                 <td className="py-3 px-6">{donation.donor?.name}</td>
-
                 <td className="py-3 px-6">
-                  { donation.type === "food"
+                  {donation.type === "food"
                     ? "Alimentos"
                     : donation.type === "clothing"
                     ? "Roupas"
@@ -178,20 +182,13 @@ export function DoacoesPage() {
                     ? "Dinheiro"
                     : donation.type === "campaign"
                     ? "Campanha"
-                    : "" }
+                    : ""}
                 </td>
-
                 <td className="py-3 px-6">{donation.product?.name ?? "-"}</td>
-
                 <td className="py-3 px-6">
-                  {donation.quantity} {donation.unit}
+                  {donation.quantity ? formatNumber(donation.quantity) + ` ${donation.unit}` : "-"}
                 </td>
-
-                <td className="py-3 px-6">
-                  R$ {donation.amount?.toFixed(2) ?? "0.00"}
-                </td>
-
-                {/* Ações */}
+                <td className="py-3 px-6">{donation.amount ? formatCurrency(donation.amount) : "R$ 0,00"}</td>
                 <td className="py-3 px-6 text-center">
                   <button
                     onClick={() => {
@@ -206,7 +203,6 @@ export function DoacoesPage() {
                 </td>
               </tr>
             ))}
-
             {filteredDonations.length === 0 && (
               <tr>
                 <td colSpan={7} className="text-center py-6 text-gray-500">
@@ -229,12 +225,7 @@ export function DoacoesPage() {
         </button>
 
         {Array.from({ length: totalPages }, (_, i) => i + 1)
-          .filter(
-            (page) =>
-              page === 1 ||
-              page === totalPages ||
-              (page >= currentPage - 1 && page <= currentPage + 1)
-          )
+          .filter((page) => page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1))
           .map((page, idx, arr) => {
             const prev = arr[idx - 1];
             const showDots = prev && page - prev > 1;
@@ -258,9 +249,7 @@ export function DoacoesPage() {
           })}
 
         <button
-          onClick={() =>
-            setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-          }
+          onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
           disabled={currentPage === totalPages || totalPages === 0}
           className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
         >
@@ -270,18 +259,12 @@ export function DoacoesPage() {
 
       {/* Modal Criar */}
       {showModal && (
-        <DonationFormModal
-          onClose={() => setShowModal(false)}
-          onSave={handleSave}
-        />
+        <DonationFormModal onClose={() => setShowModal(false)} onSave={handleSave} />
       )}
 
       {/* Modal Detalhes */}
       {showDetailsModal && selectedDonation && (
-        <DoacaoDetalhesModal
-          donation={selectedDonation}
-          onClose={() => setShowDetailsModal(false)}
-        />
+        <DoacaoDetalhesModal donation={selectedDonation} onClose={() => setShowDetailsModal(false)} />
       )}
     </div>
   );

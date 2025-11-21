@@ -6,12 +6,12 @@ export type Pagination<T> = {
 };
 
 export type Donor = {
-  id?: number;
-  type: 'pessoa_fisica' | 'pessoa_juridica';
+  id: number; // agora obrigatório
+  type: "pessoa_fisica" | "pessoa_juridica";
   name: string;
   email: string;
   phone: string;
-  cpf?: string; 
+  cpf?: string;
   cnpj?: string;
   street_number: string;
   street_complement?: string;
@@ -21,8 +21,8 @@ export type Donor = {
   zip_code: string;
   street_address: string;
   observation?: string;
-  status?: 'Ativo' | 'Inativo'; // usado para exibição
-  is_active?: boolean;          // novo campo do backend
+  status?: "Ativo" | "Inativo";
+  is_active?: boolean;
   totalDonations?: number;
   lastDonation?: string;
 };
