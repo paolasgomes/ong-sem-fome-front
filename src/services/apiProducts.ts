@@ -1,4 +1,3 @@
-// src/services/apiProducts.ts
 import axios from "axios";
 import type { ICategory } from "./apiCategory";
 
@@ -23,7 +22,6 @@ export interface Product {
   name: string;
   unit: string;
   minimum_stock: number;
-  in_stock: number;
   is_active: boolean;
   category_id: number | null;
   category?: ICategory | null;

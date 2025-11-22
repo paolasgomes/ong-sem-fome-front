@@ -1,7 +1,6 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { loadSession } from "../services/api";
 
-// Proteção comum → exige estar logado
 export function ProtectedRoute() {
     const { token } = loadSession();
 
@@ -12,7 +11,6 @@ export function ProtectedRoute() {
     return <Outlet />;
 }
 
-// Proteção por cargo → exige estar logado E ter role permitida
 export function RoleProtectedRoute({ allowed }: { allowed: string[] }) {
     const { token, user } = loadSession();
 

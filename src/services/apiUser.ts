@@ -1,4 +1,3 @@
-// apiUser.ts
 import { api } from "../services/api";
 
 export type UserRole = "admin" | "logistica" | "financeiro";

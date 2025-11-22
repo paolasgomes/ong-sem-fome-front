@@ -1,5 +1,5 @@
     import { useEffect, useState } from "react";
-    import { Pencil, Plus } from "lucide-react";
+    import { Plus } from "lucide-react";
     import { createUser, getUsers, updateUser } from "../../../../services/apiUser";
     import { UserFormModal } from "../components/UserFormModal";
     import type { IUser } from "../../../../services/apiUser";
@@ -106,13 +106,13 @@
                         
                         {/*EDITAR */}
                         <button
-                        className="text-blue-500 hover:text-blue-700"
+                        className="text-orange-500 hover:text-orange-700 cursor-pointer"
                         onClick={() => {
                             setSelectedUser(u);
                             setShowForm(true);
                         }}
                         >
-                        <Pencil className="w-4 h-4" />
+                        Atualizar Usuário
                         </button>
 
                     </div>

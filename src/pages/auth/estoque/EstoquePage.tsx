@@ -1,106 +1,72 @@
-import { useState } from "react";
-import { Package, AlertTriangle, Layers, Search, Pencil } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Pencil,Package ,TrendingDown,TrendingUp   } from "lucide-react";
 import { calculateStockInfo } from "../../../utils/stockUtils";
-import { updateStock } from "../../../services/apiStock";
+import { getProducts } from "../../../services/apiProducts";
+import { getCategories } from "../../../services/apiCategory";
+import type { ICategory } from "../../../services/apiCategory";
+import { EstoqueFormModal } from "./EstoqueFormModal";
 
 export function EstoquePage() {
 const [searchTerm, setSearchTerm] = useState("");
-const [categoryFilter, setCategoryFilter] = useState("Todas as categorias");
-const [statusFilter, setStatusFilter] = useState("Todos os status");
+const [produtos, setProdutos] = useState<any[]>([]);
+const [categorias, setCategorias] = useState<ICategory[]>([]);
+const [loading, setLoading] = useState(true);
 
-// Modal de ENTRADA manual
-const [openEntryModal, setOpenEntryModal] = useState(false);
-const [selectedProductId, setSelectedProductId] = useState("");
-const [entryQuantity, setEntryQuantity] = useState("");
-
-// Modal de edição (lápis)
-const [openModal, setOpenModal] = useState(false);
+// Controle modal
+const [modalType, setModalType] = useState<"entrada" | "editar" | null>(null);
 const [selectedProduct, setSelectedProduct] = useState<any>(null);
-const [newQuantity, setNewQuantity] = useState("");
 
-function openUpdateModal(product: any) {
-    setSelectedProduct(product);
-    setOpenModal(true);
+// Paginação
+const [currentPage, setCurrentPage] = useState(1);
+const itemsPerPage = 10;
+
+async function load() {
+    try {
+    setLoading(true);
+
+    const prod = await getProducts(1, 999);
+    const cats = await getCategories();
+
+    const withStockInfo = (prod.results || []).map((p: any) => ({
+        ...p,
+        stockInfo: calculateStockInfo(p),
+    }));
+
+    setProdutos(withStockInfo);
+    setCategorias(cats.results || []);
+    } catch (error) {
+    alert("Erro ao carregar produtos");
+    } finally {
+    setLoading(false);
+    }
 }
 
-// DADOS SIMULADOS
-const produtos = [
-    {
-    id: 1,
-    name: "Arroz Branco 5kg",
-    category: "Grãos",
-    in_stock: 150,
-    minimum_stock: 40
-    },
-    {
-    id: 2,
-    name: "Feijão Preto 1kg",
-    category: "Grãos",
-    in_stock: 25,
-    minimum_stock: 40
-    },
-    {
-    id: 3,
-    name: "Óleo de Soja 900ml",
-    category: "Enlatados",
-    in_stock: 80,
-    minimum_stock: 30
-    },
-    {
-    id: 4,
-    name: "Sabonete",
-    category: "Higiene",
-    in_stock: 15,
-    minimum_stock: 40
-    }
-];
+useEffect(() => {
+    load();
+}, []);
 
-// APLICA FILTROS
-const filtered = produtos.filter((p) =>
+// FILTRO
+const filteredProducts = produtos.filter((p) =>
     p.name.toLowerCase().includes(searchTerm.toLowerCase())
 );
 
-// Atualização do modal de edição
-async function handleUpdate() {
-    try {
-    const quantityNumber = Number(newQuantity);
+// PAGINAÇÃO
+const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+const startIndex = (currentPage - 1) * itemsPerPage;
+const pageItems = filteredProducts.slice(
+    startIndex,
+    startIndex + itemsPerPage
+);
 
-    await updateStock(selectedProduct.id, quantityNumber);
+const goToPage = (page: number) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+};
 
-    alert("Estoque atualizado com sucesso!");
-
-    setOpenModal(false);
-    setNewQuantity("");
-    } catch (error) {
-    alert("Erro ao atualizar o estoque");
-    }
-}
-
-// Entrada manual
-async function handleManualEntry() {
-    if (!selectedProductId || !entryQuantity) {
-    alert("Selecione o produto e quantidade.");
-    return;
-    }
-
-    try {
-    await updateStock(Number(selectedProductId), Number(entryQuantity));
-
-    alert("Entrada registrada com sucesso!");
-
-    setOpenEntryModal(false);
-    setEntryQuantity("");
-    setSelectedProductId("");
-    } catch (error) {
-    alert("Erro ao registrar entrada manual");
-    }
-}
-
-// RENDER
 return (
-    <div className="p-10 bg-gray-50 min-h-screen text-sm text-gray-700 relative">
-    {/* Header */}
-    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
+    <div className="p-10 bg-gray-50 min-h-screen text-sm text-gray-700">
+    {/* HEADER */}
+    <div className="flex justify-between items-center mb-10">
         <div>
         <h1 className="text-2xl font-semibold text-gray-800">Estoque</h1>
         <p className="text-gray-500 text-sm mt-2">
@@ -109,154 +75,129 @@ return (
         </div>
 
         <button
-        className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 cursor-pointer text-white font-semibold px-4 py-2 rounded-lg shadow-md transition-colors"
-        onClick={() => setOpenEntryModal(true)}
+        onClick={() => {
+            setModalType("entrada");
+            setSelectedProduct(null);
+        }}
+        className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg shadow"
         >
         + Entrada Manual
         </button>
     </div>
 
-    {/* Cards de resumo */}
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-        <div className="bg-white rounded-xl p-6 shadow-sm flex items-center justify-between border border-gray-100">
+    {/* CARDS DE RESUMO */}
+    <div className="grid grid-cols-3 gap-6 mb-10">
+        <div className="bg-white rounded-xl shadow p-6 flex items-center justify-between">
         <div>
-            <p className="text-xs text-gray-500">Total de Itens</p>
-            <p className="text-3xl font-bold mt-1 text-gray-800">
-            {produtos.length}
-            </p>
-        </div>
+            <p className="text-gray-500 text-sm">Total de Itens</p>
+            <p className="text-2xl font-semibold">{produtos.length}</p>
+        </div >
         <div className="bg-blue-50 p-4 rounded-full">
             <Package className="text-blue-500 w-7 h-7" />
         </div>
         </div>
 
-        <div className="bg-white rounded-xl p-6 shadow-sm flex items-center justify-between border border-gray-100">
+        <div className="bg-white rounded-xl shadow p-6 flex items-center justify-between">
         <div>
-            <p className="text-xs text-gray-500">Estoque Baixo</p>
-            <p className="text-3xl font-bold mt-1 text-gray-800">
-            {produtos.filter((p) => calculateStockInfo(p).status !== "Normal").length}
+            <p className="text-gray-500 text-sm">Estoque Baixo</p>
+            <p className="text-2xl font-semibold">
+            {produtos.filter(
+                (p) => p.stockInfo.status !== "Normal"
+            ).length}
             </p>
         </div>
         <div className="bg-red-50 p-4 rounded-full">
-            <AlertTriangle className="text-red-500 w-7 h-7" />
+            <TrendingDown className="text-red-500 w-7 h-7" /> 
         </div>
         </div>
 
-        <div className="bg-white rounded-xl p-6 shadow-sm flex items-center justify-between border border-gray-100">
+        <div className="bg-white rounded-xl shadow p-6 flex items-center justify-between">
         <div>
-            <p className="text-xs text-gray-500">Categorias</p>
-            <p className="text-3xl font-bold mt-1 text-gray-800">5</p>
+            <p className="text-gray-500 text-sm">Categorias</p>
+            <p className="text-2xl font-semibold">{categorias.length}</p>
         </div>
         <div className="bg-green-50 p-4 rounded-full">
-            <Layers className="text-green-500 w-7 h-7" />
+            <TrendingUp className="text-green-500 w-7 h-7" /> 
         </div>
         </div>
     </div>
 
-    {/* Filtros */}
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
-        <div className="relative w-full sm:w-1/2">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+    {/* Busca */}
+    <div className="mb-6">
         <input
-            type="text"
-            placeholder="Buscar produtos..."
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+        type="text"
+        placeholder="Buscar produto..."
+        className="border px-4 py-2 rounded-lg w-80"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
         />
-        </div>
-
-        <div className="flex gap-3 w-full sm:w-auto">
-        <select
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
-        >
-            <option>Todas as categorias</option>
-            <option>Grãos</option>
-            <option>Enlatados</option>
-            <option>Higiene</option>
-        </select>
-
-        <select
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
-        >
-            <option>Todos os status</option>
-            <option>Normal</option>
-            <option>Baixo</option>
-            <option>Crítico</option>
-        </select>
-        </div>
     </div>
 
     {/* Tabela */}
     <div className="bg-white rounded-xl shadow-md overflow-hidden">
-        <table className="w-full text-left border-collapse text-sm">
+        <table className="w-full text-left text-sm">
         <thead className="bg-gray-100 text-gray-600 uppercase text-xs font-semibold">
             <tr>
             <th className="py-3 px-6">Produto</th>
             <th className="py-3 px-6">Categoria</th>
             <th className="py-3 px-6">Quantidade</th>
-            <th className="py-3 px-6">Nível do Estoque</th>
+            <th className="py-3 px-6">Nível de Estoque</th>
             <th className="py-3 px-6">Status</th>
             <th className="py-3 px-6 text-center">Ações</th>
             </tr>
         </thead>
 
         <tbody>
-            {filtered.map((p, i) => {
-            const stock = calculateStockInfo(p);
+            {pageItems.map((p) => {
+            const { capacity, percent, status } = p.stockInfo;
 
             return (
-                <tr key={i} className="hover:bg-gray-50 transition">
-                <td className="py-3 px-6 font-medium text-gray-800">
-                    {p.name}
-                    <div className="text-xs text-gray-400">
-                    Última movimentação: 14/01/2024
+                <tr key={p.id} className="hover:bg-gray-50 transition">
+                <td className="py-3 px-6 font-medium">{p.name}</td>
+                <td className="py-3 px-6">
+                    {p.category?.name ?? "Sem categoria"}
+                </td>
+
+                <td className="py-3 px-6 font-semibold">
+                    {p.in_stock}
+                    <div className="text-xs text-gray-500">
+                    Min: {p.minimum_stock} | Capacidade: {capacity}
                     </div>
                 </td>
 
-                <td className="py-3 px-6">{p.category}</td>
-
-                <td className="py-3 px-6">{p.in_stock} un.</td>
-
                 <td className="py-3 px-6">
-                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                    <div className="w-full h-2 bg-gray-200 rounded-lg overflow-hidden">
                     <div
-                        className={`
-                            h-2.5 rounded-full 
-                            ${stock.status === "Crítico" ? "bg-red-500" : ""}
-                            ${stock.status === "Baixo" ? "bg-yellow-400" : ""}
-                            ${stock.status === "Normal" ? "bg-green-500" : ""}
-                        `}
-                        style={{ width: `${stock.percent}%` }}
+                        className="h-full bg-orange-500"
+                        style={{ width: `${percent}%` }}
                     ></div>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                    {stock.percent}% da capacidade
-                    </p>
+                    <span className="text-xs text-gray-600">
+                    {percent}% da capacidade
+                    </span>
                 </td>
 
                 <td className="py-3 px-6">
                     <span
-                    className={`
-                        px-3 py-1 rounded-full text-xs font-semibold
-                        ${
-                        stock.status === "Crítico"
-                            ? "bg-red-100 text-red-700"
-                            : stock.status === "Baixo"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : "bg-green-100 text-green-700"
-                        }
-                    `}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        status === "Crítico"
+                        ? "bg-red-100 text-red-700"
+                        : status === "Baixo"
+                        ? "bg-yellow-100 text-yellow-700"
+                        : "bg-green-100 text-green-700"
+                    }`}
                     >
-                    {stock.status}
+                    {status}
                     </span>
                 </td>
 
                 <td className="py-3 px-6 text-center">
                     <button
-                    className="p-2 text-blue-500 hover:text-blue-700 transition"
-                    onClick={() => openUpdateModal(p)}
+                    onClick={() => {
+                        setModalType("editar");
+                        setSelectedProduct(p);
+                    }}
+                    className="text-blue-500 hover:text-blue-700"
                     >
                     <Pencil className="w-4 h-4" />
                     </button>
@@ -268,91 +209,67 @@ return (
         </table>
     </div>
 
-    {/* MODAL: Entrada Manual */}
-    {openEntryModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-        <div className="bg-white p-6 rounded-xl w-96 shadow-lg">
-            <h2 className="text-lg font-semibold mb-4">Entrada Manual</h2>
+    {/* Paginação */}
+    <div className="flex justify-center mt-6 gap-2 items-center">
+        <button
+        onClick={() => goToPage(currentPage - 1)}
+        disabled={currentPage === 1}
+        className="px-4 py-2 bg-gray-100 rounded disabled:bg-gray-300"
+        >
+        &laquo; Anterior
+        </button>
 
-            <label className="text-sm font-medium">Produto</label>
-            <select
-            value={selectedProductId}
-            onChange={(e) => setSelectedProductId(e.target.value)}
-            className="w-full border rounded-lg px-3 py-2 mb-4"
-            >
-            <option value="">Selecione...</option>
-            {produtos.map((p) => (
-                <option key={p.id} value={p.id}>
-                {p.name}
-                </option>
-            ))}
-            </select>
+        {Array.from({ length: totalPages }, (_, i) => i + 1)
+        .filter(
+            (page) =>
+            page === 1 ||
+            page === totalPages ||
+            (page >= currentPage - 1 && page <= currentPage + 1)
+        )
+        .map((page, idx, arr) => {
+            const prev = arr[idx - 1];
+            const showDots = prev && page - prev > 1;
 
-            <label className="text-sm font-medium">
-            Quantidade de entrada
-            </label>
-            <input
-            type="number"
-            value={entryQuantity}
-            onChange={(e) => setEntryQuantity(e.target.value)}
-            className="w-full border rounded-lg px-3 py-2 mb-4"
-            placeholder="Ex: 20"
-            />
+            return (
+            <span key={page} className="flex items-center">
+                {showDots && <span className="px-2">...</span>}
 
-            <div className="flex justify-end gap-3">
-            <button
-                className="px-4 py-2 bg-gray-300 rounded-lg"
-                onClick={() => setOpenEntryModal(false)}
-            >
-                Cancelar
-            </button>
+                <button
+                onClick={() => goToPage(page)}
+                className={`px-4 py-2 rounded ${
+                    currentPage === page
+                    ? "bg-orange-500 text-white font-semibold"
+                    : "bg-gray-100 hover:bg-gray-200"
+                }`}
+                >
+                {page}
+                </button>
+            </span>
+            );
+        })}
 
-            <button
-                className="px-4 py-2 bg-orange-500 text-white rounded-lg"
-                onClick={handleManualEntry}
-            >
-                Confirmar
-            </button>
-            </div>
-        </div>
-        </div>
-    )}
-
-    {/* MODAL: Editar quantidade (botão lápis) */}
-    {openModal && selectedProduct && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-        <div className="bg-white p-6 rounded-xl w-96 shadow-lg">
-            <h2 className="text-lg font-semibold mb-4">
-            Atualizar estoque de {selectedProduct.name}
-            </h2>
-
-            <label className="text-sm font-medium">Novo estoque</label>
-            <input
-            type="number"
-            value={newQuantity}
-            onChange={(e) => setNewQuantity(e.target.value)}
-            className="w-full border rounded-lg px-3 py-2 mb-4"
-            placeholder="Ex: 150"
-            />
-
-            <div className="flex justify-end gap-3">
-            <button
-                className="px-4 py-2 bg-gray-300 rounded-lg"
-                onClick={() => setOpenModal(false)}
-            >
-                Cancelar
-            </button>
-
-            <button
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg"
-                onClick={handleUpdate}
-            >
-                Atualizar
-            </button>
-            </div>
-        </div>
-        </div>
-    )}
+        <button
+        onClick={() => goToPage(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        className="px-4 py-2 bg-gray-100 rounded disabled:bg-gray-300"
+        >
+        Próximo &raquo;
+        </button>
     </div>
+
+    {/* MODAL */}
+    {modalType && (
+        <EstoqueFormModal
+        type={modalType}
+        product={selectedProduct}
+        onClose={() => setModalType(null)}
+        onUpdated={load} 
+        />
+    )}
+
+    
+    </div>
+
+    
 );
 }

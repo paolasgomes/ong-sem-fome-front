@@ -14,7 +14,6 @@ const [form, setForm] = useState<Product>({
     name: "",
     unit: "",
     minimum_stock: 0,
-    in_stock: 0,
     is_active: true,
     category_id: null,
 });
@@ -47,7 +46,6 @@ useEffect(() => {
         name: product.name,
         unit: product.unit,
         minimum_stock: product.minimum_stock,
-        in_stock: product.in_stock,
         is_active: product.is_active,
         category_id: product.category_id ?? product.category?.id ?? null,
         });
@@ -76,7 +74,6 @@ const handleSubmit = () => {
         name: form.name,
         unit: form.unit,
         minimum_stock: form.minimum_stock,
-        in_stock: form.in_stock,
         is_active: form.is_active,
         category_id: form.category_id,
     };
@@ -100,59 +97,87 @@ return (
 
         <div className="space-y-4">
         {/* NOME */}
-        <div className="relative">
+        <div className="flex flex-col gap-1">
+            <label htmlFor="name" className="text-gray-600 text-sm font-medium">
+            Nome do produto
+            </label>
+
+            <div className="relative">
             <input
-            type="text"
-            name="name"
-            placeholder="Nome do produto"
-            value={form.name}
-            onChange={handleChange}
-            className="w-full border rounded-lg pl-10 pr-4 py-3"
+                id="name"
+                type="text"
+                name="name"
+                placeholder="Digite o nome do produto"
+                value={form.name}
+                onChange={handleChange}
+                className="w-full border rounded-lg pl-10 pr-4 py-3"
             />
             <Package className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            </div>
         </div>
 
         {/* UNIDADE */}
-        <div className="relative">
-            <input
-            type="text"
-            name="unit"
-            placeholder="Ex.: kg, un, cx..."
-            value={form.unit}
-            onChange={handleChange}
-            className="w-full border rounded-lg pl-10 pr-4 py-3"
-            />
-            <Ruler className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <div className="flex flex-col gap-1">
+            <label
+                htmlFor="unit"
+                className="text-gray-600 text-sm font-medium"
+            >
+                Unidade de medida
+            </label>
+
+            <div className="relative">
+                <select
+                id="unit"
+                name="unit"
+                value={form.unit}
+                onChange={handleChange}
+                className="w-full border rounded-lg pl-10 pr-4 py-3 bg-white"
+                >
+                <option value="">Selecione...</option>
+                <option value="un">un — Unidade</option>
+                <option value="kg">kg — Quilograma</option>
+                <option value="g">g — Grama</option>
+                <option value="l">l — Litro</option>
+                <option value="ml">ml — Mililitro</option>
+                <option value="cx">cx — Caixa</option>
+                </select>
+
+                <Ruler className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            </div>
         </div>
 
         {/* ESTOQUE MÍNIMO */}
+        <div className="flex flex-col gap-1">
+        <label htmlFor="minimum_stock" className="text-gray-600 text-sm font-medium">
+            Estoque mínimo
+        </label>
+
         <input
+            id="minimum_stock"
             type="number"
             name="minimum_stock"
-            placeholder="Estoque mínimo"
+            placeholder="Digite o estoque mínimo"
             value={form.minimum_stock}
             onChange={handleChange}
             className="w-full border rounded-lg px-4 py-3"
         />
-
-        {/* ESTOQUE ATUAL */}
-        <input
-            type="number"
-            name="in_stock"
-            placeholder="Estoque atual"
-            value={form.in_stock}
-            onChange={handleChange}
-            className="w-full border rounded-lg px-4 py-3"
-        />
+        </div>
 
         {/* SELECT DE CATEGORIA */}
-        <select
+        <div className="flex flex-col gap-1">
+            <label htmlFor="category_id" className="text-gray-600 text-sm font-medium">
+            Categoria
+            </label>
+
+            <select
+            id="category_id"
             name="category_id"
             value={form.category_id ?? ""}
             onChange={handleChange}
             className="w-full border rounded-lg px-4 py-3"
             >
             <option value="">Selecione uma categoria</option>
+
             {loadingCategories ? (
                 <option disabled>Carregando...</option>
             ) : (
@@ -162,7 +187,8 @@ return (
                 </option>
                 ))
             )}
-        </select>
+            </select>
+        </div>
 
         </div>
 
