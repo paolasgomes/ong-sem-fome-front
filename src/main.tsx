@@ -16,6 +16,7 @@ import { ProtectedRoute } from "./routes/ProtectedRoute";
 import { DoacoesPage } from "./pages/auth/doacoes/DoacoesPage";
 import { SettingsPage } from "./pages/auth/configuracoes/ConfigPage";
 import { EstoquePage } from "./pages/auth/estoque/EstoquePage";
+import SaidasCestasPage from "./pages/auth/SaidasCestas/SaidasCestasPage";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -34,10 +35,10 @@ createRoot(document.getElementById("root")!).render(
             <Route path="doacoes" element={<DoacoesPage/>} />
             <Route path="configuracoes" element={<SettingsPage />} />
             <Route path="estoque" element={<EstoquePage />} />
+            <Route path="saidas" element={<SaidasCestasPage />} />
 
             {/* Outras rotas internas */}
             
-            <Route path="saidas" element={<ErrorPage />} />
             <Route path="campanhas" element={<ErrorPage />} />
             <Route path="solicitacoes" element={<ErrorPage />} />
             <Route path="financeiro" element={<ErrorPage />} />
