@@ -1,4 +1,3 @@
-// services/apiCategory.ts
 import { api } from "./api";
 
 export interface ICategory {

@@ -1,4 +1,3 @@
-// src/services/apiStock.ts
 import { api } from "./api";
 
 export async function updateStock(productId: number, quantity: number) {

@@ -1,13 +1,12 @@
-// CategoryPage.tsx
 import { useEffect, useState } from "react";
-import { Pencil, Plus } from "lucide-react";
+import {  Plus } from "lucide-react";
 import {
 createCategory,
 updateCategory,
 getCategories,
 type ICategory,
 } from "../../../../services/apiCategory";
-import { CategoryFormModal } from "../components/CategoryFormModal"; // componente separado
+import { CategoryFormModal } from "../components/CategoryFormModal"; 
 
 export function CategoryPage() {
 const [categories, setCategories] = useState<ICategory[]>([]);
@@ -113,10 +112,10 @@ return (
                 <td className="py-3 px-6">{cat.is_perishable ? "Sim" : "Não"}</td>
                 <td className="py-3 px-6 text-center">
                 <button
-                    className="text-blue-500 hover:text-blue-700 cursor-pointer"
+                    className="text-orange-500 hover:text-orange-700 cursor-pointer"
                     onClick={() => openEditModal(cat)}
                 >
-                    <Pencil className="w-4 h-4" />
+                    Atualizar Categoria
                 </button>
                 </td>
             </tr>

@@ -1,4 +1,3 @@
-// CategoryFormModal.tsx
 import { useEffect, useState } from "react";
 import { X, Tag } from "lucide-react";
 import type { ICategory } from "../../../../services/apiCategory";
