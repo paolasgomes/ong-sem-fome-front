@@ -17,6 +17,7 @@ import { DoacoesPage } from "./pages/auth/doacoes/DoacoesPage";
 import { SettingsPage } from "./pages/auth/configuracoes/ConfigPage";
 import { EstoquePage } from "./pages/auth/estoque/EstoquePage";
 import SaidasCestasPage from "./pages/auth/SaidasCestas/SaidasCestasPage";
+import RelatoriosPage from "./pages/auth/Relatorios/RelatoriosPage";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -42,7 +43,7 @@ createRoot(document.getElementById("root")!).render(
             <Route path="campanhas" element={<ErrorPage />} />
             <Route path="solicitacoes" element={<ErrorPage />} />
             <Route path="financeiro" element={<ErrorPage />} />
-            <Route path="relatorios" element={<ErrorPage />} />
+            <Route path="relatorios" element={<RelatoriosPage />} />
             
           </Route>
         </Route>

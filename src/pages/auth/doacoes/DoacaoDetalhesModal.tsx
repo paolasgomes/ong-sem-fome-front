@@ -13,13 +13,12 @@ export function DoacaoDetalhesModal({ donation, onClose }: Props) {
     campaign: "Campanha",
   };
 
-  // Criar um array de campos com label, valor e ícone
   const fields = [
     { label: "Doador", value: donation.donor?.name, icon: <User className="text-orange-500 w-5 h-5" /> },
     { label: "Categoria", value: categoryMap[donation.type], icon: <FileText className="text-orange-500 w-5 h-5" /> },
     { label: "Produto", value: donation.product?.name, icon: <Box className="text-orange-500 w-5 h-5" /> },
-    { label: "Quantidade", value: donation.quantity ? `${donation.quantity} ${donation.unit}` : undefined, icon: null },
-    { label: "Valor", value: donation.amount ? `R$ ${donation.amount.toFixed(2)}` : undefined, icon: <DollarSign className="text-orange-500 w-5 h-5" /> },
+    {label: "Quantidade",value: donation.type !== "money"? donation.quantity !== null && donation.quantity !== undefined? `${donation.quantity}${donation.unit ? ` ${donation.unit}` : ""}`: "Não informado": undefined,icon: <Box className="text-orange-500 w-5 h-5" />,},
+    {label: "Valor",value: donation.type === "money" && donation.amount !== null? `R$ ${donation.amount.toFixed(2)}`: donation.amount !== null? `${donation.amount} ${donation.unit || ""}`: "Não informado",icon: <DollarSign className="text-orange-500 w-5 h-5" />,},
     { label: "Data", value: donation.created_at ? new Date(donation.created_at).toLocaleDateString() : undefined, icon: <Calendar className="text-orange-500 w-5 h-5" /> },
     { label: "Observações", value: donation.observations, icon: <FileText className="text-orange-500 w-5 h-5" /> },
   ];
@@ -41,7 +40,7 @@ export function DoacaoDetalhesModal({ donation, onClose }: Props) {
 
         <div className="space-y-4 text-gray-700">
           {fields.map((field, idx) => {
-            if (!field.value) return null; // só renderiza se tiver valor
+            if (!field.value) return null;
             return (
               <div key={idx} className="flex items-center gap-2 justify-between">
                 <div className="flex items-center gap-2">
