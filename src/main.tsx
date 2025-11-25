@@ -37,13 +37,12 @@ createRoot(document.getElementById("root")!).render(
             <Route path="configuracoes" element={<SettingsPage />} />
             <Route path="estoque" element={<EstoquePage />} />
             <Route path="saidas" element={<SaidasCestasPage />} />
-
-            {/* Outras rotas internas */}
-            
+            <Route path="relatorios" element={<RelatoriosPage />} />
             <Route path="campanhas" element={<ErrorPage />} />
             <Route path="solicitacoes" element={<ErrorPage />} />
+
+            {/* Outras rotas internas */}
             <Route path="financeiro" element={<ErrorPage />} />
-            <Route path="relatorios" element={<RelatoriosPage />} />
             
           </Route>
         </Route>
