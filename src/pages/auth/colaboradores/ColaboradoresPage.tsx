@@ -111,6 +111,7 @@ export function ColaboradoresPage() {
     is_active: mode === "new" ? true : collab.status === "Ativo",
     sector_id: null,
     user_id: null,
+    function: collab.function,
   };
 
   try {

@@ -1,12 +1,13 @@
-// DonorsPage.tsx
 import { useState, useEffect } from "react";
 import { User, Users, Building2, Trash2, Search, Pencil, UserPlus } from "lucide-react";
 import { DonorFormModal, validateDonor } from "./FormularioDoador";
 import { DeleteConfirmationModal } from "./ConfirmDeletar";
 import { getDonors, createDonor, updateDonor, deleteDonor } from "../../../services/apiDonors";
+import { getDonations } from "../../../services/apiDoacoes";
 import type { Donor, Pagination } from "../../../types/Donors";
 
 const INITIAL_NEW_DONOR: Donor = {
+  id: 0,
   type: "pessoa_fisica",
   name: "",
   email: "",
@@ -45,30 +46,37 @@ export function DonorsPage() {
   }, []);
 
   const fetchDonors = async () => {
-  try {
-    const data: Pagination<Donor> = await getDonors({ page: 1, limit: 1000 });
+    try {
+      const donorData: Pagination<Donor> = await getDonors({ page: 1, limit: 1000 });
+      const donationData: Pagination<any> = await getDonations(1, 1000); // todas as doações
 
-    // Mapeia is_active para status com type assertion
-    const mapped: Donor[] = data.results.map(donor => ({
-      ...donor,
-      status: donor.is_active ? "Ativo" as 'Ativo' : "Inativo" as 'Inativo',
-    }));
+      const mapped: Donor[] = donorData.results.map(donor => {
+        const donorDonations = donationData.results.filter(d => d.donor?.id === donor.id);
+        const totalDonations = donorDonations.length;
+        const lastDonation = donorDonations
+          .map(d => d.created_at)
+          .sort((a, b) => b.localeCompare(a))[0] ?? "";
 
-    setDonors(mapped);
-  } catch (error) {
-    console.error(error);
-    alert("Falha ao carregar doadores.");
-  }
-};
+        return {
+          ...donor,
+          status: donor.is_active ? "Ativo" as const : "Inativo" as const,
+          totalDonations,
+          lastDonation,
+        };
+      });
 
+      setDonors(mapped);
+    } catch (error) {
+      console.error(error);
+      alert("Falha ao carregar doadores.");
+    }
+  };
 
   const handleSave = async (donor: Donor, mode: "new" | "edit") => {
     const validationError = validateDonor(donor);
     if (validationError) return alert(validationError);
 
-    // Converte status para is_active ao enviar
     const donorToSend: any = { ...donor, is_active: donor.status === "Ativo" };
-
     if (donor.type === "pessoa_fisica") {
       delete donorToSend.cnpj;
       donorToSend.cpf = donor.cpf?.replace(/\D/g, "");
@@ -77,7 +85,6 @@ export function DonorsPage() {
       donorToSend.cnpj = donor.cnpj?.replace(/\D/g, "");
     }
 
-    // Remover campos que não precisam ser enviados
     delete donorToSend.totalDonations;
     delete donorToSend.lastDonation;
 
@@ -134,7 +141,6 @@ export function DonorsPage() {
     return typeMatch && searchMatch;
   });
 
-  // Paginação no front-end
   const totalPages = Math.ceil(filteredDonors.length / itemsPerPage);
   const paginatedDonors = filteredDonors.slice(
     (currentPage - 1) * itemsPerPage,
@@ -241,11 +247,11 @@ export function DonorsPage() {
                   <span>{donor.email}</span>
                   <span className="text-gray-500">{donor.phone}</span>
                 </td>
-                <td className="py-3 px-6 font-semibold text-orange-600">{donor.totalDonations ?? ""}</td>
-                <td className="py-3 px-6 text-gray-500">{donor.lastDonation ?? ""}</td>
+                <td className="py-3 px-6 font-semibold text-orange-600">{donor.totalDonations}</td>
+                <td className="py-3 px-6 text-gray-500">{donor.lastDonation}</td>
                 <td className="py-3 px-6">
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold ${donor.status === "Ativo" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
-                    {donor.status ?? ""}
+                    {donor.status}
                   </span>
                 </td>
                 <td className="py-3 px-6 text-center flex items-center justify-center gap-3">
@@ -291,11 +297,7 @@ export function DonorsPage() {
                 {showDots && <span className="px-2">...</span>}
                 <button
                   onClick={() => setCurrentPage(page)}
-                  className={`px-4 py-2 rounded-lg transition-colors ${
-                    page === currentPage
-                      ? "bg-orange-500 text-white font-semibold"
-                      : "bg-gray-100 hover:bg-gray-200"
-                  }`}
+                  className={`px-4 py-2 rounded-lg transition-colors ${page === currentPage ? "bg-orange-500 text-white font-semibold" : "bg-gray-100 hover:bg-gray-200"}`}
                 >
                   {page}
                 </button>
