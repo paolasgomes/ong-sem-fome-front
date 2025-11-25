@@ -5,7 +5,8 @@ export function ErrorPage() {
                 <div>
         <h1 className="text-2xl font-semibold text-gray-800">Página indisponível no momento</h1>
         <p className="text-gray-500 text-sm mt-2">
-            Não foi possível carregar a página. A página pode estar fora do ar por um tempo. Por favor, tente novamente mais tarde.
+            Não foi possível carregar a página. Esta seção será implementada futuramente.
+
         </p>
                 </div>
             </div>
