@@ -34,7 +34,7 @@ export interface Pagination<T> {
   total: number;
 }
 
-export const getProducts = async (page = 1, limit = 10): Promise<Pagination<Product>> => {
+export const getProducts = async (page = 1, limit = 100): Promise<Pagination<Product>> => {
   const res = await api.get("/products", { params: { page, limit } });
   return res.data;
 };
