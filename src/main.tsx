@@ -18,11 +18,13 @@ import { SettingsPage } from "./pages/auth/configuracoes/ConfigPage";
 import { EstoquePage } from "./pages/auth/estoque/EstoquePage";
 import SaidasCestasPage from "./pages/auth/SaidasCestas/SaidasCestasPage";
 import RelatoriosPage from "./pages/auth/Relatorios/RelatoriosPage";
+import CampanhaPage from "./pages/auth/campanha/campanhaPage";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
       <Routes>
+
         {/* Página de login (pública) */}
         <Route path="/" element={<LoginPage />} />
 
@@ -33,17 +35,15 @@ createRoot(document.getElementById("root")!).render(
             <Route path="donors" element={<DonorsPage />} />
             <Route path="familias" element={<FamiliasPage />} />
             <Route path="colaboradores" element={<ColaboradoresPage />} />
-            <Route path="doacoes" element={<DoacoesPage/>} />
+            <Route path="doacoes" element={<DoacoesPage />} />
             <Route path="configuracoes" element={<SettingsPage />} />
             <Route path="estoque" element={<EstoquePage />} />
             <Route path="saidas" element={<SaidasCestasPage />} />
             <Route path="relatorios" element={<RelatoriosPage />} />
-            <Route path="campanhas" element={<ErrorPage />} />
-            <Route path="solicitacoes" element={<ErrorPage />} />
+            <Route path="campanhas" element={<CampanhaPage />} />
 
-            {/* Outras rotas internas */}
+            <Route path="solicitacoes" element={<ErrorPage />} />
             <Route path="financeiro" element={<ErrorPage />} />
-            
           </Route>
         </Route>
       </Routes>

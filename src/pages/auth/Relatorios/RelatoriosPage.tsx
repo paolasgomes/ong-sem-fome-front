@@ -8,6 +8,7 @@ import { saveAs } from "file-saver";
 import { getDonations } from "../../../services/apiDoacoes";
 import { getProducts } from "../../../services/apiProducts";
 import { getFamily } from "../../../services/apiFamily";
+import { getCampaigns } from "../../../services/apiCampaigns"; // nova import
 
 //tipagens//
 interface StatCardProps {
@@ -47,6 +48,17 @@ interface Family {
   is_active?: boolean;
 }
 
+interface Campaign {
+  id: string;
+  name?: string;
+  description?: string;
+  start_date?: string;
+  end_date?: string;
+  goal_amount?: number;
+  goal_quantity?: number;
+  is_active?: boolean;
+}
+
 export default function RelatoriosPage() {
   const [period, setPeriod] = useState<string>("");
   const [category, setCategory] = useState<string>("");
@@ -69,7 +81,7 @@ export default function RelatoriosPage() {
     return true;
   };
 
-  //PDF //
+  /* ================== PDF ================== */
   const gerarPdfDoacoes = async (preview = false) => {
     const doc = new jsPDF({ unit: "pt", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -124,13 +136,12 @@ export default function RelatoriosPage() {
     doc.text("Relatório de Estoque", margin, 38);
 
     const { results } = await getProducts(1, 999);
-    const filtered = results;
     let cursorY = headerHeight + 20;
 
     autoTable(doc, {
       startY: cursorY,
       head: [["Produto", "Categoria", "Quantidade", "Unidade", "Estoque Mínimo"]],
-      body: filtered.map(p => [
+      body: results.map(p => [
         p.name || "—",
         p.category?.name || "—",
         p.in_stock ?? 0,
@@ -155,24 +166,20 @@ export default function RelatoriosPage() {
 
   const gerarPdfFamilias = async (preview = false) => {
     const doc = new jsPDF({ unit: "pt", format: "a4" });
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const headerHeight = 60;
+    const { results } = await getFamily(1, 999);
+    let cursorY = 80;
 
     doc.setFillColor(primaryColor);
-    doc.rect(0, 0, pageWidth, headerHeight, "F");
+    doc.rect(0, 0, doc.internal.pageSize.getWidth(), 60, "F");
     doc.setTextColor(whiteColor);
     doc.setFontSize(18);
     doc.setFont("helvetica", "bold");
     doc.text("Relatório de Famílias", margin, 38);
 
-    const { results } = await getFamily(1, 999);
-    const filtered = results;
-    let cursorY = headerHeight + 20;
-
     autoTable(doc, {
       startY: cursorY,
       head: [["Família", "Integrantes", "Situação"]],
-      body: filtered.map(f => [
+      body: results.map(f => [
         f.responsible_name || "—",
         f.members_count ?? 0,
         f.is_active ? "Ativa" : "Inativa"
@@ -193,23 +200,58 @@ export default function RelatoriosPage() {
     setDownloads(prev => prev + 1);
   };
 
+  const gerarPdfCampanhas = async (preview = false) => {
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const { results } = await getCampaigns({ page: 1, limit: 999 });
+    let cursorY = 80;
+
+    doc.setFillColor(primaryColor);
+    doc.rect(0, 0, doc.internal.pageSize.getWidth(), 60, "F");
+    doc.setTextColor(whiteColor);
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("Relatório de Campanhas", margin, 38);
+
+    autoTable(doc, {
+      startY: cursorY,
+      head: [["Nome", "Descrição", "Início", "Fim", "Status"]],
+      body: results.map(c => [
+        c.name || "—",
+        c.description || "—",
+        c.start_date || "—",
+        c.end_date || "Indefinido",
+        c.is_active ? "Ativa" : "Inativa"
+      ]),
+      headStyles: { fillColor: primaryColor, textColor: whiteColor, halign: "center", fontStyle: "bold" },
+      styles: { font: "helvetica", fontSize: 11, textColor: grayText, cellPadding: 6 },
+      theme: "grid",
+      margin: { left: margin, right: margin },
+    });
+
+    doc.setFontSize(10);
+    doc.setTextColor("#666666");
+    doc.setFont("helvetica", "normal");
+    doc.text(`Gerado em: ${new Date().toLocaleString()}`, margin, doc.internal.pageSize.getHeight() - 40);
+
+    if (preview) return doc.output("bloburl");
+    doc.save(`relatorio-campanhas.pdf`);
+    setDownloads(prev => prev + 1);
+  };
+
   /* ================== EXCEL ================== */
   const gerarExcelDoacoes = async () => {
     const { results } = await getDonations(1, 999);
     const filtered = results.filter(d => filterByPeriod(d.created_at));
-
     const data = filtered.map(d => ({
       Data: new Date(d.created_at || '').toLocaleDateString(),
       Doador: d.donor?.name || "—",
       Produto: d.product?.name || "—",
       Quantidade: d.quantity ? `${d.quantity} ${d.unit || "un"}` : d.amount ? `R$ ${d.amount}` : "—",
     }));
-
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Doações");
-    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-    saveAs(new Blob([wbout], { type: "application/octet-stream" }), "relatorio-doacoes.xlsx");
+    saveAs(new Blob([XLSX.write(wb, { bookType: "xlsx", type: "array" })], { type: "application/octet-stream" }), "relatorio-doacoes.xlsx");
     setDownloads(prev => prev + 1);
   };
 
@@ -222,12 +264,10 @@ export default function RelatoriosPage() {
       Unidade: p.unit || "—",
       Estoque_Minimo: p.minimum_stock ?? "—"
     }));
-
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Estoque");
-    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-    saveAs(new Blob([wbout], { type: "application/octet-stream" }), "relatorio-estoque.xlsx");
+    saveAs(new Blob([XLSX.write(wb, { bookType: "xlsx", type: "array" })], { type: "application/octet-stream" }), "relatorio-estoque.xlsx");
     setDownloads(prev => prev + 1);
   };
 
@@ -238,24 +278,39 @@ export default function RelatoriosPage() {
       Integrantes: f.members_count ?? 0,
       Situacao: f.is_active ? "Ativa" : "Inativa"
     }));
-
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Famílias");
-    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-    saveAs(new Blob([wbout], { type: "application/octet-stream" }), "relatorio-familias.xlsx");
+    saveAs(new Blob([XLSX.write(wb, { bookType: "xlsx", type: "array" })], { type: "application/octet-stream" }), "relatorio-familias.xlsx");
     setDownloads(prev => prev + 1);
   };
 
-  const handlePreview = async (type: "doacoes" | "estoque" | "familias") => {
+  const gerarExcelCampanhas = async () => {
+    const { results } = await getCampaigns({ page: 1, limit: 999 });
+    const data = results.map(c => ({
+      Nome: c.name,
+      Descricao: c.description || "—",
+      Inicio: c.start_date || "—",
+      Fim: c.end_date || "Indefinido",
+      Status: c.is_active ? "Ativa" : "Inativa",
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Campanhas");
+    saveAs(new Blob([XLSX.write(wb, { bookType: "xlsx", type: "array" })], { type: "application/octet-stream" }), "relatorio-campanhas.xlsx");
+    setDownloads(prev => prev + 1);
+  };
+
+  const handlePreview = async (type: "doacoes" | "estoque" | "familias" | "campanhas") => {
     let url;
     if (type === "doacoes") url = await gerarPdfDoacoes(true);
     if (type === "estoque") url = await gerarPdfEstoque(true);
     if (type === "familias") url = await gerarPdfFamilias(true);
+    if (type === "campanhas") url = await gerarPdfCampanhas(true);
     window.open(url, "_blank");
   };
 
-  /* ==================================================== */
+  /* ================== RENDER ================== */
   return (
     <div className="p-8 bg-gray-50 min-h-screen text-gray-700">
       <div className="mb-10">
@@ -273,27 +328,10 @@ export default function RelatoriosPage() {
 
       {/* Cards dos Relatórios */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
-        <ReportCard
-          title="Relatório de Doações"
-          description="Listagem completa de todas as doações recebidas"
-          onDownload={() => gerarPdfDoacoes()}
-          onPreview={() => handlePreview("doacoes")}
-          onDownloadExcel={gerarExcelDoacoes}
-        />
-        <ReportCard
-          title="Relatório de Estoque"
-          description="Status atual do estoque por categoria"
-          onDownload={() => gerarPdfEstoque()}
-          onPreview={() => handlePreview("estoque")}
-          onDownloadExcel={gerarExcelEstoque}
-        />
-        <ReportCard
-          title="Relatório de Famílias"
-          description="Lista de famílias beneficiadas e estatísticas"
-          onDownload={() => gerarPdfFamilias()}
-          onPreview={() => handlePreview("familias")}
-          onDownloadExcel={gerarExcelFamilias}
-        />
+        <ReportCard title="Relatório de Doações" description="Listagem completa de todas as doações recebidas" onDownload={() => gerarPdfDoacoes()} onPreview={() => handlePreview("doacoes")} onDownloadExcel={gerarExcelDoacoes} />
+        <ReportCard title="Relatório de Estoque" description="Status atual do estoque por categoria" onDownload={() => gerarPdfEstoque()} onPreview={() => handlePreview("estoque")} onDownloadExcel={gerarExcelEstoque} />
+        <ReportCard title="Relatório de Famílias" description="Lista de famílias beneficiadas e estatísticas" onDownload={() => gerarPdfFamilias()} onPreview={() => handlePreview("familias")} onDownloadExcel={gerarExcelFamilias} />
+        <ReportCard title="Relatório de Campanhas" description="Lista de campanhas cadastradas" onDownload={() => gerarPdfCampanhas()} onPreview={() => handlePreview("campanhas")} onDownloadExcel={gerarExcelCampanhas} />
       </div>
 
       {/* Relatório Personalizado */}
@@ -310,8 +348,9 @@ export default function RelatoriosPage() {
           <select className="p-3 border outline-none rounded-lg bg-gray-50" value={category} onChange={(e) => setCategory(e.target.value)}>
             <option value="">Todas as categorias</option>
             <option value="doacoes">Doações</option>
-            <option value="familias">Famílias</option>
             <option value="estoque">Estoque</option>
+            <option value="familias">Famílias</option>
+            <option value="campanhas">Campanhas</option>
           </select>
         </div>
 
@@ -321,6 +360,7 @@ export default function RelatoriosPage() {
             if (category === "doacoes") gerarPdfDoacoes();
             if (category === "estoque") gerarPdfEstoque();
             if (category === "familias") gerarPdfFamilias();
+            if (category === "campanhas") gerarPdfCampanhas();
           }}
           className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg shadow transition mb-2"
         >
@@ -333,6 +373,7 @@ export default function RelatoriosPage() {
             if (category === "doacoes") gerarExcelDoacoes();
             if (category === "estoque") gerarExcelEstoque();
             if (category === "familias") gerarExcelFamilias();
+            if (category === "campanhas") gerarExcelCampanhas();
           }}
           className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-lg shadow transition flex items-center justify-center gap-2"
         >
