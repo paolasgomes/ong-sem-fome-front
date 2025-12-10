@@ -36,7 +36,7 @@ interface DonationForm {
 export function DonationFormModal({ onClose, onSave }: DonationFormModalProps) {
   const [donors, setDonors] = useState<{ id: number; name: string }[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [campaigns, setCampaigns] = useState<{ id: number; title: string }[]>([]);
+  const [campaigns, setCampaigns] = useState<{ id: number; name: string }[]>([]);
   const [collaborators, setCollaborators] = useState<{ id: number; name: string }[]>([]);
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [donationType, setDonationType] = useState<DonationType | "">("");
@@ -76,8 +76,8 @@ export function DonationFormModal({ onClose, onSave }: DonationFormModalProps) {
       } catch {}
 
       try {
-        const campaignsRes = await getCampaigns();
-        setCampaigns((campaignsRes.results ?? campaignsRes).map((c: any) => ({ id: c.id, title: c.title })));
+        const campaignsRes = await getCampaigns({ page: 1, limit: 1000 });
+        setCampaigns((campaignsRes.results ?? campaignsRes).map((c: any) => ({ id: c.id, name: c.name })));
       } catch {}
 
       try {
@@ -114,10 +114,10 @@ export function DonationFormModal({ onClose, onSave }: DonationFormModalProps) {
     setForm(prev => ({
       ...prev,
       type: "",
-      amount: "",
-      quantity: "",
-      product_id: "",
-      campaign_id: "",
+      amount: val === "money" || val === "campaign" ? "" : prev.amount,
+      quantity: val === "food" || val === "clothing" ? prev.quantity : "",
+      product_id: val === "food" || val === "clothing" ? prev.product_id : "",
+      campaign_id: val === "campaign" ? prev.campaign_id : "",
     }));
   };
 
@@ -240,7 +240,7 @@ export function DonationFormModal({ onClose, onSave }: DonationFormModalProps) {
           {donationType === "campaign" && (
             <select name="campaign_id" value={form.campaign_id} onChange={handleChange} className="w-full border rounded-lg px-3 py-2">
               <option value="">Selecione a campanha</option>
-              {campaigns.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+              {campaigns.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           )}
 
