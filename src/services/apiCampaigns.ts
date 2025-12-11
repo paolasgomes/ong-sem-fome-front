@@ -8,7 +8,6 @@ const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
-// Adiciona token automaticamente
 api.interceptors.request.use((config) => {
   const token = getToken();
   if (token) {
@@ -18,25 +17,23 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// ========== Types (compatíveis com o backend) ==========
-
+// ================= TYPES =================
 export type CampaignType = "money" | "food" | "clothing";
 
 export interface Campaign {
   id: number;
   name: string;
   description?: string | null;
+  campaign_type: CampaignType;
   start_date: string;
   end_date?: string | null;
   is_active: boolean;
-  campaign_type: CampaignType;
   goal_quantity?: number | null;
   goal_amount?: number | null;
   created_at?: string;
   updated_at?: string;
 }
 
-// Resposta correta da rota GET /campaigns
 export interface CampaignPagination {
   results: Campaign[];
   page: number;
@@ -45,9 +42,31 @@ export interface CampaignPagination {
   totalPages: number;
 }
 
-// ========== Endpoints ==========
+// ================= HELPERS =================
+const buildCampaignPayload = (data: any) => {
+  const payload: any = {
+    name: data.name,
+    description: data.description ?? null,
+    start_date: data.start_date,
+    end_date: data.end_date ?? null,
+    campaign_type: data.campaign_type,
+    is_active: data.is_active ?? true, // <---- NOVO: ativa por padrão
+  };
 
-// Buscar campanhas com paginação + filtros opcionais
+  if (data.campaign_type === "money") {
+    payload.goal_amount = data.goal_amount != null ? Number(data.goal_amount) : null;
+    payload.goal_quantity = null;
+  }
+
+  if (data.campaign_type === "food" || data.campaign_type === "clothing") {
+    payload.goal_quantity = data.goal_quantity != null ? Number(data.goal_quantity) : null;
+    payload.goal_amount = null;
+  }
+
+  return payload;
+};
+
+// ================= ENDPOINTS =================
 export const getCampaigns = async ({
   page = 1,
   limit = 10,
@@ -69,29 +88,19 @@ export const getCampaigns = async ({
   return res.data;
 };
 
-// Buscar uma campanha específica
 export const getCampaignById = async (id: number): Promise<Campaign> => {
   const res = await api.get(`/campaigns/${id}`);
   return res.data;
 };
 
-// Criar campanha
-export const createCampaign = async (data: Partial<Campaign>): Promise<Campaign> => {
-  const res = await api.post("/campaigns", data);
+export const createCampaign = async (data: any): Promise<Campaign> => {
+  const payload = buildCampaignPayload({ ...data, is_active: true }); // força ativo
+  const res = await api.post("/campaigns", payload);
   return res.data;
 };
 
-// Atualizar campanha
-export const updateCampaign = async (
-  id: number,
-  data: Partial<Campaign>
-): Promise<Campaign> => {
-  const res = await api.put(`/campaigns/${id}`, data);
-  return res.data;
-};
-
-// Deletar campanha
-export const deleteCampaign = async (id: number) => {
-  const res = await api.delete(`/campaigns/${id}`);
+export const updateCampaign = async (id: number, data: any): Promise<Campaign> => {
+  const payload = buildCampaignPayload(data);
+  const res = await api.put(`/campaigns/${id}`, payload);
   return res.data;
 };

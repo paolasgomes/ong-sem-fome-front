@@ -5,7 +5,7 @@ import CestasDetalhesModal from "./CestasDetalhesModal";
 import { getDistributions } from "../../../services/apiDistribuicao";
 import type { Distribution } from "../../../services/apiDistribuicao";
 
-// Função auxiliar para agregar itens repetidos
+// Função itens repetidos
 const aggregateItems = (items: { name: string; quantity: number }[]) => {
   const map: Record<string, number> = {};
   items.forEach(item => {

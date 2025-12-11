@@ -91,11 +91,24 @@ export function DonorsPage() {
     try {
       if (mode === "edit" && donor.id) {
         await updateDonor(donor.id, donorToSend);
+
+        // Atualiza o estado local imediatamente
+        setDonors(prev =>
+          prev.map(d =>
+            d.id === donor.id
+              ? { ...d, ...donorToSend, status: donorToSend.is_active ? "Ativo" : "Inativo" }
+              : d
+          )
+        );
       } else {
-        await createDonor(donorToSend);
+        const newDonor = await createDonor(donorToSend);
+        setDonors(prev => [
+          ...prev,
+          { ...newDonor, status: newDonor.is_active ? "Ativo" : "Inativo" },
+        ]);
       }
+
       setShowModal(false);
-      fetchDonors();
     } catch (error: any) {
       console.error(error);
       alert(error.response?.data?.error || "Erro ao salvar o doador.");
@@ -108,7 +121,7 @@ export function DonorsPage() {
       await deleteDonor(selectedDonor.id);
       setSelectedDonor(null);
       setShowDeleteModal(false);
-      fetchDonors();
+      setDonors(prev => prev.filter(d => d.id !== selectedDonor.id));
     } catch (error) {
       console.error(error);
       alert("Erro ao excluir o doador.");

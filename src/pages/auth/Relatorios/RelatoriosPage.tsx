@@ -4,13 +4,12 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
-
 import { getDonations } from "../../../services/apiDoacoes";
 import { getProducts } from "../../../services/apiProducts";
 import { getFamily } from "../../../services/apiFamily";
-import { getCampaigns } from "../../../services/apiCampaigns"; // nova import
+import { getCampaigns } from "../../../services/apiCampaigns";
 
-//tipagens//
+// Tipagens
 interface StatCardProps {
   label: string;
   value: number;
@@ -70,7 +69,6 @@ export default function RelatoriosPage() {
   const grayText = "#333333";
   const margin = 40;
 
-  //FUNÇÕES//
   const filterByPeriod = (date?: string) => {
     if (!period) return true;
     if (!date) return false;
@@ -314,8 +312,8 @@ export default function RelatoriosPage() {
   return (
     <div className="p-8 bg-gray-50 min-h-screen text-gray-700">
       <div className="mb-10">
-        <h1 className="text-2xl font-semibold text-gray-800">Relatórios</h1>
-        <p className="text-gray-500 text-sm mt-1">Relatórios gerais e estatísticas do sistema</p>
+        <h1 className="text-3xl font-bold text-gray-800">Relatórios</h1>
+        <p className="text-gray-500 text-sm mt-2">Relatórios gerais e estatísticas do sistema</p>
       </div>
 
       {/* Estatísticas */}
@@ -335,17 +333,17 @@ export default function RelatoriosPage() {
       </div>
 
       {/* Relatório Personalizado */}
-      <div className="bg-white rounded-xl p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">Relatório Personalizado</h2>
+      <div className="bg-white rounded-2xl p-6 shadow-lg">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Relatório Personalizado</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-          <select className="p-3 border outline-none rounded-lg bg-gray-50" value={period} onChange={(e) => setPeriod(e.target.value)}>
+          <select className="p-3 border outline-none rounded-lg bg-gray-50 hover:border-orange-400 transition" value={period} onChange={(e) => setPeriod(e.target.value)}>
             <option value="">Selecione o período</option>
             <option value="7d">Últimos 7 dias</option>
             <option value="30d">Últimos 30 dias</option>
             <option value="custom">Período personalizado</option>
           </select>
 
-          <select className="p-3 border outline-none rounded-lg bg-gray-50" value={category} onChange={(e) => setCategory(e.target.value)}>
+          <select className="p-3 border outline-none rounded-lg bg-gray-50 hover:border-orange-400 transition" value={category} onChange={(e) => setCategory(e.target.value)}>
             <option value="">Todas as categorias</option>
             <option value="doacoes">Doações</option>
             <option value="estoque">Estoque</option>
@@ -354,32 +352,33 @@ export default function RelatoriosPage() {
           </select>
         </div>
 
-        <button
-          onClick={() => {
-            setReportsGenerated(prev => prev + 1);
-            if (category === "doacoes") gerarPdfDoacoes();
-            if (category === "estoque") gerarPdfEstoque();
-            if (category === "familias") gerarPdfFamilias();
-            if (category === "campanhas") gerarPdfCampanhas();
-          }}
-          className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg shadow transition mb-2"
-        >
-          Gerar PDF
-        </button>
-
-        <button
-          onClick={() => {
-            setReportsGenerated(prev => prev + 1);
-            if (category === "doacoes") gerarExcelDoacoes();
-            if (category === "estoque") gerarExcelEstoque();
-            if (category === "familias") gerarExcelFamilias();
-            if (category === "campanhas") gerarExcelCampanhas();
-          }}
-          className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-lg shadow transition flex items-center justify-center gap-2"
-        >
-          <FileSpreadsheet className="w-5 h-5" />
-          Gerar Excel
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={() => {
+              setReportsGenerated(prev => prev + 1);
+              if (category === "doacoes") gerarPdfDoacoes();
+              if (category === "estoque") gerarPdfEstoque();
+              if (category === "familias") gerarPdfFamilias();
+              if (category === "campanhas") gerarPdfCampanhas();
+            }}
+            className="flex-1 py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg shadow transition"
+          >
+            Gerar PDF
+          </button>
+          <button
+            onClick={() => {
+              setReportsGenerated(prev => prev + 1);
+              if (category === "doacoes") gerarExcelDoacoes();
+              if (category === "estoque") gerarExcelEstoque();
+              if (category === "familias") gerarExcelFamilias();
+              if (category === "campanhas") gerarExcelCampanhas();
+            }}
+            className="flex-1 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg shadow transition flex items-center justify-center gap-2"
+          >
+            <FileSpreadsheet className="w-5 h-5" />
+            Gerar Excel
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -388,13 +387,13 @@ export default function RelatoriosPage() {
 /* ====================== Components ====================== */
 function StatCard({ label, value, icon: Icon }: StatCardProps) {
   return (
-    <div className="bg-white rounded-xl p-6 shadow-sm flex items-center justify-between">
+    <div className="bg-white rounded-2xl p-6 shadow-lg flex items-center justify-between hover:shadow-xl transition">
       <div>
         <p className="text-xs text-gray-500">{label}</p>
         <p className="text-3xl font-bold text-gray-800 mt-1">{value}</p>
       </div>
       <div className="bg-orange-50 p-4 rounded-full">
-        <Icon className="text-orange-500 w-7 h-7" />
+        <Icon className="text-orange-500 w-8 h-8" />
       </div>
     </div>
   );
@@ -402,20 +401,18 @@ function StatCard({ label, value, icon: Icon }: StatCardProps) {
 
 function ReportCard({ title, description, onDownload, onPreview, onDownloadExcel }: ReportCardProps) {
   return (
-    <div className="bg-white rounded-xl p-6 shadow-sm flex flex-col justify-between">
-      <div>
-        <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
-        <p className="text-gray-500 text-sm mt-1">{description}</p>
+    <div className="bg-white rounded-2xl p-6 shadow-lg flex flex-col justify-between hover:shadow-xl transition">
+      <div className="flex items-center gap-3">
+        <div className="flex-1">
+          <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
+          <p className="text-gray-500 text-sm mt-1">{description}</p>
+        </div>
       </div>
 
-      <div className="flex items-center gap-3 mt-6">
+      <div className="flex flex-col sm:flex-row items-center gap-3 mt-6">
         <button onClick={onPreview} className="flex-1 py-2 text-sm border rounded-lg text-gray-700 hover:bg-gray-100 transition">Visualizar PDF</button>
         <button onClick={onDownload} className="flex-1 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg shadow transition">Baixar PDF</button>
-        <button
-          onClick={onDownloadExcel}
-          className="p-2 bg-green-500 hover:bg-green-600 text-white rounded-lg shadow transition flex items-center justify-center"
-          title="Baixar Excel"
-        >
+        <button onClick={onDownloadExcel} className="p-2 bg-green-500 hover:bg-green-600 text-white rounded-lg shadow transition flex items-center justify-center" title="Baixar Excel">
           <FileSpreadsheet className="w-5 h-5" />
         </button>
       </div>

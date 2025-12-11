@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { createCampaign } from "../../../services/apiCampaigns";
+import { useState, useEffect } from "react";
 import { X } from "lucide-react";
+import { createCampaign } from "../../../services/apiCampaigns";
 import type { CampaignType } from "../../../types/Campanha";
 
 interface CampanhaFormProps {
@@ -12,7 +12,7 @@ interface CampanhaFormProps {
 export default function CampanhaForm({ open, onClose, onCreated }: CampanhaFormProps) {
   const [loading, setLoading] = useState(false);
 
-  const [form, setForm] = useState({
+  const INITIAL_FORM_STATE = {
     name: "",
     description: "",
     start_date: "",
@@ -20,8 +20,13 @@ export default function CampanhaForm({ open, onClose, onCreated }: CampanhaFormP
     campaign_type: "food" as CampaignType,
     goal_quantity: "",
     goal_amount: "",
-    is_active: true,
-  });
+  };
+
+  const [form, setForm] = useState(INITIAL_FORM_STATE);
+
+  useEffect(() => {
+    if (open) setForm(INITIAL_FORM_STATE); // Reset ao abrir
+  }, [open]);
 
   if (!open) return null;
 
@@ -29,7 +34,13 @@ export default function CampanhaForm({ open, onClose, onCreated }: CampanhaFormP
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+
+    if (name === "goal_quantity" || name === "goal_amount") {
+      setForm(prev => ({ ...prev, [name]: value === "" ? "" : Number(value) }));
+      return;
+    }
+
+    setForm(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,22 +48,21 @@ export default function CampanhaForm({ open, onClose, onCreated }: CampanhaFormP
     setLoading(true);
 
     try {
-      await createCampaign({
-        name: form.name,
-        description: form.description,
-        start_date: form.start_date,
-        end_date: form.end_date || null,
-        campaign_type: form.campaign_type,
-        goal_quantity: form.campaign_type === "food" ? Number(form.goal_quantity) : null,
-        goal_amount: form.campaign_type === "money" ? Number(form.goal_amount) : null,
-        is_active: form.is_active,
-      });
+      const payload: any = { ...form, is_active: true };
 
+      // Remove meta irrelevante de acordo com tipo
+      if (form.campaign_type === "money") {
+        delete payload.goal_quantity;
+      } else {
+        delete payload.goal_amount;
+      }
+
+      await createCampaign(payload);
       onCreated?.();
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Erro ao criar campanha", err);
-      alert("Erro ao criar campanha. Tente novamente.");
+      alert(err.response?.data?.error || "Erro ao criar campanha.");
     } finally {
       setLoading(false);
     }
@@ -69,6 +79,7 @@ export default function CampanhaForm({ open, onClose, onCreated }: CampanhaFormP
         </div>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
+          {/* Nome */}
           <div>
             <label className="text-sm font-medium">Nome da campanha</label>
             <input
@@ -80,6 +91,7 @@ export default function CampanhaForm({ open, onClose, onCreated }: CampanhaFormP
             />
           </div>
 
+          {/* Descrição */}
           <div>
             <label className="text-sm font-medium">Descrição</label>
             <textarea
@@ -91,6 +103,7 @@ export default function CampanhaForm({ open, onClose, onCreated }: CampanhaFormP
             />
           </div>
 
+          {/* Datas */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium">Início</label>
@@ -116,6 +129,7 @@ export default function CampanhaForm({ open, onClose, onCreated }: CampanhaFormP
             </div>
           </div>
 
+          {/* Tipo */}
           <div>
             <label className="text-sm font-medium">Tipo da campanha</label>
             <select
@@ -130,28 +144,33 @@ export default function CampanhaForm({ open, onClose, onCreated }: CampanhaFormP
             </select>
           </div>
 
-          {/* Renderização condicional */}
-          {form.campaign_type === "food" && (
+          {/* Meta quantidade ou peças */}
+          {(form.campaign_type === "food" || form.campaign_type === "clothing") && (
             <div>
-              <label className="text-sm font-medium">Meta (Quantidade)</label>
+              <label className="text-sm font-medium">
+                Meta {form.campaign_type === "food" ? "(Quantidade)" : "(Peças)"}
+              </label>
               <input
                 type="number"
                 name="goal_quantity"
                 value={form.goal_quantity}
                 onChange={handleChange}
+                required
                 className="w-full mt-1 p-2 border rounded-lg"
               />
             </div>
           )}
 
+          {/* Meta financeira */}
           {form.campaign_type === "money" && (
             <div>
-              <label className="text-sm font-medium">Meta (Valor R$)</label>
+              <label className="text-sm font-medium">Meta (R$)</label>
               <input
                 type="number"
                 name="goal_amount"
                 value={form.goal_amount}
                 onChange={handleChange}
+                required
                 className="w-full mt-1 p-2 border rounded-lg"
               />
             </div>
