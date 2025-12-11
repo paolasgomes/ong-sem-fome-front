@@ -130,7 +130,7 @@ export default function CriarCestaModal({ open, onClose, onCreated }: Props) {
       setTimeout(() => { setSubmitting(false); onClose(); }, 900);
     } catch (err: any) {
       console.error(err);
-      setError(err?.response?.data?.error || err?.message || "Erro ao criar cesta/distribuição. Tente novamente.");
+      setError(err?.response?.data?.error || err?.message || "Não foi possível criar a cesta/distribuição. Verifique o estoque disponível.");
       setSubmitting(false);
     }
   };
@@ -181,7 +181,7 @@ export default function CriarCestaModal({ open, onClose, onCreated }: Props) {
             </select>
 
             <label className="text-sm text-gray-600">Descrição (opcional)</label>
-            <input value={description} onChange={(e)=>setDescription(e.target.value)} placeholder="Ex: Cesta padrão - novembro" className="w-full border rounded-lg px-3 py-2"/>
+            <input value={description} onChange={(e)=>setDescription(e.target.value)} placeholder="Ex: Cesta padrão - Natal" className="w-full border rounded-lg px-3 py-2"/>
           </div>
         )}
 
